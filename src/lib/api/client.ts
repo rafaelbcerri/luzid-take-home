@@ -3,6 +3,7 @@
  * `requestJson`, so error handling is identical everywhere in the UI.
  */
 import type { SerializedRecording, SerializedStep } from "@/lib/api/serialize-recording";
+import type { FramePreview } from "@/lib/types/frame-preview";
 import type { Recording, StepFieldUpdates } from "@/lib/types/process-step";
 
 export class ApiRequestError extends Error {
@@ -114,4 +115,31 @@ export function deleteStepRequest(stepId: string) {
   return requestJson<{ deleted: true }>(`/api/steps/${stepId}`, {
     method: "DELETE",
   });
+}
+
+export function fetchStepFrames(
+  stepId: string,
+  atSeconds?: number,
+  signal?: AbortSignal,
+) {
+  const query = atSeconds === undefined ? "" : `?at=${atSeconds}`;
+
+  return requestJson<{ frames: FramePreview[]; durationSeconds: number | null }>(
+    `/api/steps/${stepId}/frames${query}`,
+    { signal, cache: "no-store" },
+  );
+}
+
+export function changeStepEvidenceRequest(
+  stepId: string,
+  timestampSeconds: number,
+) {
+  return requestJson<{ step: SerializedStep }>(
+    `/api/steps/${stepId}/evidence`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timestampSeconds }),
+    },
+  );
 }
