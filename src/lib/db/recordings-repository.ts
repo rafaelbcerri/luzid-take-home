@@ -257,3 +257,69 @@ export async function findStepWithRecording(
     recording: toRecording(row.recordings),
   };
 }
+
+export async function renameRecording(params: {
+  recordingId: string;
+  title: string;
+}): Promise<Recording | null> {
+  const [row] = await db
+    .update(recordings)
+    .set({ title: params.title, updatedAt: new Date() })
+    .where(eq(recordings.id, params.recordingId))
+    .returning();
+
+  return row ? toRecording(row) : null;
+}
+
+/**
+ * Inserts an empty step directly below another one, shifting everything after
+ * it down. `afterStepId` of null puts the new step first.
+ */
+export async function insertStepAfter(params: {
+  recordingId: string;
+  afterStepId: string | null;
+}): Promise<ProcessStep> {
+  return db.transaction(async (transaction) => {
+    const existingSteps = await transaction
+      .select()
+      .from(processSteps)
+      .where(eq(processSteps.recordingId, params.recordingId))
+      .orderBy(asc(processSteps.position));
+
+    const afterIndex = params.afterStepId
+      ? existingSteps.findIndex((step) => step.id === params.afterStepId)
+      : -1;
+    const insertAt = afterIndex + 1;
+    const timestampSeconds =
+      existingSteps[afterIndex]?.timestampSeconds ??
+      existingSteps[0]?.timestampSeconds ??
+      0;
+
+    await Promise.all(
+      existingSteps.slice(insertAt).map((step, offset) =>
+        transaction
+          .update(processSteps)
+          .set({ position: insertAt + offset + 1 })
+          .where(eq(processSteps.id, step.id)),
+      ),
+    );
+
+    const [row] = await transaction
+      .insert(processSteps)
+      .values({
+        recordingId: params.recordingId,
+        position: insertAt,
+        action: "New step",
+        system: "",
+        testData: "",
+        description: "",
+        responsible: "",
+        expectedResult: "",
+        timestampSeconds,
+        evidenceTimestampSeconds: timestampSeconds,
+      })
+      .returning();
+
+    return toProcessStep(row);
+  });
+}

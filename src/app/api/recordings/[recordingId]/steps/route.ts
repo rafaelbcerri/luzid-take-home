@@ -6,6 +6,7 @@ import { serializeStep } from "@/lib/api/serialize-recording";
 import {
   appendStep,
   findRecording,
+  insertStepAfter,
   reorderSteps,
 } from "@/lib/db/recordings-repository";
 
@@ -15,9 +16,13 @@ const reorderRequestSchema = z.object({
   orderedStepIds: z.array(z.string().uuid()).min(1),
 });
 
+const addStepRequestSchema = z.object({
+  afterStepId: z.string().uuid().nullish(),
+});
+
 /** Adds an empty step the consultant can fill in by hand. */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext<"/api/recordings/[recordingId]/steps">,
 ) {
   const { recordingId } = await context.params;
@@ -27,7 +32,21 @@ export async function POST(
       return apiError("This recording does not exist.", 404);
     }
 
-    const step = await appendStep({ recordingId });
+    // A POST with no body still means "add one at the end".
+    const body = await request.json().catch(() => ({}));
+    const parsed = addStepRequestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return apiError("Could not tell where to add this step.", 400);
+    }
+
+    const step = parsed.data.afterStepId
+      ? await insertStepAfter({
+          recordingId,
+          afterStepId: parsed.data.afterStepId,
+        })
+      : await appendStep({ recordingId });
+
     return apiOk({ step: await serializeStep(step) }, 201);
   } catch (error) {
     console.error(`[api] adding a step to ${recordingId} failed`, error);

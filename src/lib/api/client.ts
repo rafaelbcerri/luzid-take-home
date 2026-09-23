@@ -79,10 +79,25 @@ export function deleteRecording(recordingId: string) {
   });
 }
 
-export function addStep(recordingId: string) {
+export function addStep(recordingId: string, afterStepId?: string) {
   return requestJson<{ step: SerializedStep }>(
     `/api/recordings/${recordingId}/steps`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ afterStepId: afterStepId ?? null }),
+    },
+  );
+}
+
+export function renameRecordingRequest(recordingId: string, title: string) {
+  return requestJson<{ recording: Recording }>(
+    `/api/recordings/${recordingId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    },
   );
 }
 
