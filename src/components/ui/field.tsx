@@ -3,6 +3,7 @@
 import {
   useEffect,
   useRef,
+  type InputHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 
@@ -66,6 +67,28 @@ export function AutoGrowingTextarea({
       {hint ? (
         <span className="mt-1 block text-xs text-ink-400">{hint}</span>
       ) : null}
+    </label>
+  );
+}
+
+type LabelledInputProps = InputHTMLAttributes<HTMLInputElement> & {
+  label: string;
+};
+
+export function LabelledInput({
+  label,
+  className,
+  ...inputProps
+}: LabelledInputProps) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.06em] text-ink-500 uppercase">
+        {label}
+      </span>
+      <input
+        {...inputProps}
+        className={classNames(SHARED_FIELD_CLASS_NAMES, "h-11", className)}
+      />
     </label>
   );
 }

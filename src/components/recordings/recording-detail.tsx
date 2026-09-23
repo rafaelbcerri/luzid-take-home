@@ -7,6 +7,8 @@ import { useState } from "react";
 import { ProcessingTimeline } from "@/components/processing/processing-timeline";
 import { StepSkeletonList } from "@/components/processing/step-skeleton-list";
 import { RecordingErrorCard } from "@/components/recordings/recording-error-card";
+import { RecordingTitle } from "@/components/recordings/recording-title";
+import { FramePickerDialog } from "@/components/steps/frame-picker-dialog";
 import { ScreenshotLightbox } from "@/components/steps/screenshot-lightbox";
 import { StepList } from "@/components/steps/step-list";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Toast } from "@/components/ui/toast";
 import {
   deleteRecording as deleteRecordingRequest,
+  renameRecordingRequest,
   retryRecording,
 } from "@/lib/api/client";
 import type {
@@ -42,6 +45,9 @@ export function RecordingDetail({
   const [isRetrying, setIsRetrying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [screenshotInFocus, setScreenshotInFocus] =
+    useState<SerializedStep | null>(null);
+
+  const [stepChangingEvidence, setStepChangingEvidence] =
     useState<SerializedStep | null>(null);
 
   const stepEditing = useStepEditing({
@@ -113,9 +119,24 @@ export function RecordingDetail({
             ) : null}
           </div>
 
-          <h1 className="text-2xl leading-tight text-ink-900 sm:text-3xl">
-            {recording.title}
-          </h1>
+          <RecordingTitle
+            title={recording.title}
+            onRename={async (nextTitle) => {
+              const previousTitle = recording.title;
+              setRecording((current) => ({ ...current, title: nextTitle }));
+
+              try {
+                await renameRecordingRequest(recording.id, nextTitle);
+                showToast("success", "Name saved");
+              } catch (error) {
+                setRecording((current) => ({
+                  ...current,
+                  title: previousTitle,
+                }));
+                throw error;
+              }
+            }}
+          />
 
           <p className="mt-1.5 text-sm text-ink-400">
             {recording.originalFileName}
@@ -132,6 +153,7 @@ export function RecordingDetail({
               variant="secondary"
               isLoading={isRetrying}
               onClick={handleRetry}
+              className="h-11"
             >
               Re-analyze
             </Button>
@@ -140,7 +162,7 @@ export function RecordingDetail({
             variant="secondary"
             isLoading={isDeleting}
             onClick={handleDelete}
-            className="text-danger-600"
+            className="h-11 text-danger-600"
           >
             Delete
           </Button>
@@ -179,6 +201,9 @@ export function RecordingDetail({
           onSaveStep={stepEditing.saveStep}
           onDeleteStep={stepEditing.removeStep}
           onMoveStep={stepEditing.moveStep}
+          onMoveStepToPosition={stepEditing.moveStepToPosition}
+          onInsertStep={stepEditing.insertStepBelow}
+          onChangeEvidence={setStepChangingEvidence}
           onAddStep={stepEditing.appendEmptyStep}
           isAddingStep={stepEditing.isAddingStep}
           onOpenScreenshot={setScreenshotInFocus}
@@ -191,6 +216,23 @@ export function RecordingDetail({
           caption={screenshotInFocus.action}
           timestampSeconds={screenshotInFocus.timestampSeconds}
           onClose={() => setScreenshotInFocus(null)}
+        />
+      ) : null}
+
+      {stepChangingEvidence ? (
+        <FramePickerDialog
+          step={stepChangingEvidence}
+          stepNumber={
+            recording.steps.findIndex(
+              (step) => step.id === stepChangingEvidence.id,
+            ) + 1
+          }
+          onClose={() => setStepChangingEvidence(null)}
+          onEvidenceChanged={(savedStep) => {
+            stepEditing.applyChangedStep(savedStep);
+            showToast("success", "Evidence updated");
+          }}
+          onError={(message) => showToast("error", message)}
         />
       ) : null}
 

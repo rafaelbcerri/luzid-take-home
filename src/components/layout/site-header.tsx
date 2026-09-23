@@ -2,10 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 /** Dark header with the accent CTA, mirroring the luzid.io navigation bar. */
-export function SiteHeader() {
+export function SiteHeader({ isWide = false }: { isWide?: boolean }) {
   return (
     <header className="bg-ink-900">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+      <div
+        className={`mx-auto flex h-16 items-center justify-between px-6 ${isWide ? "max-w-[1440px] lg:px-12" : "max-w-6xl"}`}
+      >
         <Link
           href="/"
           className="flex items-center rounded-[var(--radius-control)]"

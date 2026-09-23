@@ -11,6 +11,9 @@ type StepListProps = {
   onSaveStep: (stepId: string, draft: StepDraft) => Promise<void>;
   onDeleteStep: (stepId: string) => Promise<void>;
   onMoveStep: (stepId: string, direction: "up" | "down") => Promise<void>;
+  onMoveStepToPosition: (stepId: string, position: number) => Promise<void>;
+  onInsertStep: (afterStepId: string) => Promise<void>;
+  onChangeEvidence: (step: SerializedStep) => void;
   onAddStep: () => Promise<void>;
   isAddingStep: boolean;
   onOpenScreenshot: (step: SerializedStep) => void;
@@ -21,6 +24,9 @@ export function StepList({
   onSaveStep,
   onDeleteStep,
   onMoveStep,
+  onMoveStepToPosition,
+  onInsertStep,
+  onChangeEvidence,
   onAddStep,
   isAddingStep,
   onOpenScreenshot,
@@ -43,11 +49,17 @@ export function StepList({
 
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="text-lg text-ink-900">Process Steps</h2>
-        <p className="mt-0.5 text-sm text-ink-500">
-          Detailed breakdown of workflow steps
-        </p>
+      <div className="flex items-end justify-between gap-6">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-[19px] text-ink-900">Process steps</h2>
+          <p className="text-sm text-ink-500">
+            Every action a colleague repeats to reproduce this process. Drag a
+            row, or use its menu, to change the order.
+          </p>
+        </div>
+        <span className="text-[13px] text-ink-500">
+          {steps.length === 1 ? "1 step" : `${steps.length} steps`}
+        </span>
       </div>
 
       <StepTable
@@ -55,6 +67,9 @@ export function StepList({
         onSaveStep={onSaveStep}
         onDeleteStep={onDeleteStep}
         onMoveStep={onMoveStep}
+        onMoveStepToPosition={onMoveStepToPosition}
+        onInsertStep={onInsertStep}
+        onChangeEvidence={onChangeEvidence}
         onOpenScreenshot={onOpenScreenshot}
       />
 

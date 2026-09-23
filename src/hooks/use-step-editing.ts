@@ -142,5 +142,79 @@ export function useStepEditing({
     }
   }, [recording.id, recording.steps, setSteps, onSuccess, onError]);
 
-  return { saveStep, removeStep, moveStep, appendEmptyStep, isAddingStep };
+  const insertStepBelow = useCallback(
+    async (afterStepId: string) => {
+      const previousSteps = recording.steps;
+      const insertAt =
+        previousSteps.findIndex((step) => step.id === afterStepId) + 1;
+
+      try {
+        const { step } = await addStep(recording.id, afterStepId);
+        setSteps([
+          ...previousSteps.slice(0, insertAt),
+          step,
+          ...previousSteps.slice(insertAt),
+        ]);
+        onSuccess("Step added — fill it in");
+      } catch (error) {
+        onError(
+          error instanceof Error ? error.message : "Could not add a step.",
+        );
+      }
+    },
+    [recording.id, recording.steps, setSteps, onSuccess, onError],
+  );
+
+  const moveStepToPosition = useCallback(
+    async (stepId: string, position: number) => {
+      const previousSteps = recording.steps;
+      const currentIndex = previousSteps.findIndex((step) => step.id === stepId);
+      const targetIndex = Math.min(
+        Math.max(position - 1, 0),
+        previousSteps.length - 1,
+      );
+
+      if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+      const reorderedSteps = moveItem(previousSteps, currentIndex, targetIndex);
+      setSteps(reorderedSteps);
+
+      try {
+        const { steps } = await reorderStepsRequest(
+          recording.id,
+          reorderedSteps.map((step) => step.id),
+        );
+        setSteps(steps);
+      } catch (error) {
+        setSteps(previousSteps);
+        onError(
+          error instanceof Error ? error.message : "Could not move this step.",
+        );
+      }
+    },
+    [recording.id, recording.steps, setSteps, onError],
+  );
+
+  /** Writes a step the server has already saved back into the page. */
+  const applyChangedStep = useCallback(
+    (changedStep: SerializedStep) => {
+      setSteps(
+        recording.steps.map((step) =>
+          step.id === changedStep.id ? changedStep : step,
+        ),
+      );
+    },
+    [recording.steps, setSteps],
+  );
+
+  return {
+    saveStep,
+    removeStep,
+    moveStep,
+    moveStepToPosition,
+    insertStepBelow,
+    applyChangedStep,
+    appendEmptyStep,
+    isAddingStep,
+  };
 }

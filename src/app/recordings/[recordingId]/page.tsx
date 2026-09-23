@@ -25,7 +25,7 @@ export default async function RecordingPage({
   if (!recording) notFound();
 
   return (
-    <PageShell>
+    <PageShell isWide>
       <RecordingDetail
         initialRecording={await serializeRecording(recording)}
       />
