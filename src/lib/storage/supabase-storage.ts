@@ -118,7 +118,11 @@ class SupabaseStorageAdapter implements StorageAdapter {
     paths: string[];
   }): Promise<void> {
     if (paths.length === 0) return;
-    await this.client.storage.from(bucket).remove(paths);
+    const { error } = await this.client.storage.from(bucket).remove(paths);
+
+    if (error) {
+      throw new Error(`Could not remove stored files: ${error.message}`);
+    }
   }
 }
 

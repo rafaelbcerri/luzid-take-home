@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { NextRequest } from "next/server";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { STORAGE_BUCKETS } from "@/lib/config/env";
 import { createRecording, listRecordings } from "@/lib/db/recordings-repository";
 import { processRecording } from "@/lib/pipeline/process-recording";
@@ -25,7 +26,10 @@ export const maxDuration = 300;
 
 export async function GET() {
   try {
-    return apiOk({ recordings: await listRecordings() });
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to continue.", 401);
+
+    return apiOk({ recordings: await listRecordings(ownerUserId) });
   } catch (error) {
     console.error("[api] listing recordings failed", error);
     return apiError("Could not load your recordings.", 500);
@@ -41,6 +45,9 @@ export async function POST(request: NextRequest) {
   let workingDirectory: string | null = null;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to continue.", 401);
+
     const formData = await request.formData();
     const uploadedFile = formData.get("video");
 
@@ -88,6 +95,7 @@ export async function POST(request: NextRequest) {
     });
 
     const recording = await createRecording({
+      ownerUserId,
       title: uploadedFile.name.replace(/\.[^.]+$/, ""),
       originalFileName: uploadedFile.name,
       videoPath,

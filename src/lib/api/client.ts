@@ -79,6 +79,24 @@ export function deleteRecording(recordingId: string) {
   });
 }
 
+export function fetchShare(recordingId: string) {
+  return requestJson<{ url: string | null }>(`/api/recordings/${recordingId}/share`, {
+    cache: "no-store",
+  });
+}
+
+export function createShare(recordingId: string) {
+  return requestJson<{ url: string }>(`/api/recordings/${recordingId}/share`, {
+    method: "POST",
+  });
+}
+
+export function revokeShare(recordingId: string) {
+  return requestJson<{ revoked: true }>(`/api/recordings/${recordingId}/share`, {
+    method: "DELETE",
+  });
+}
+
 export function addStep(recordingId: string, afterStepId?: string) {
   return requestJson<{ step: SerializedStep }>(
     `/api/recordings/${recordingId}/steps`,

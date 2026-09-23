@@ -17,21 +17,31 @@ export const recordingStatusEnum = pgEnum(
   RECORDING_STATUSES,
 );
 
-export const recordings = pgTable("recordings", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  status: recordingStatusEnum("status").notNull().default("uploading"),
-  errorMessage: text("error_message"),
-  originalFileName: text("original_file_name").notNull(),
-  videoPath: text("video_path").notNull(),
-  durationSeconds: real("duration_seconds"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const recordings = pgTable(
+  "recordings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id").notNull(),
+    title: text("title").notNull(),
+    status: recordingStatusEnum("status").notNull().default("uploading"),
+    errorMessage: text("error_message"),
+    originalFileName: text("original_file_name").notNull(),
+    videoPath: text("video_path").notNull(),
+    durationSeconds: real("duration_seconds"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("recordings_owner_created_idx").on(
+      table.ownerUserId,
+      table.createdAt,
+    ),
+  ],
+);
 
 export const processSteps = pgTable(
   "process_steps",
@@ -61,6 +71,16 @@ export const processSteps = pgTable(
     table.position,
   )],
 );
+
+export const recordingPublicShares = pgTable("recording_public_shares", {
+  recordingId: uuid("recording_id")
+    .primaryKey()
+    .references(() => recordings.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 export const recordingsRelations = relations(recordings, ({ many }) => ({
   steps: many(processSteps),

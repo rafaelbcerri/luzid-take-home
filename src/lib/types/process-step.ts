@@ -53,6 +53,7 @@ export type StepFieldUpdates = Partial<
 
 export type Recording = {
   id: string;
+  ownerUserId: string;
   title: string;
   status: RecordingStatus;
   errorMessage: string | null;

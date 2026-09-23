@@ -22,6 +22,20 @@
       "when": 1790186933552,
       "tag": "0002_nappy_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790188885626,
+      "tag": "0003_true_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790189218719,
+      "tag": "0004_groovy_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }

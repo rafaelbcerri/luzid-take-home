@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import {
   findRecording,
   updateRecordingStatus,
@@ -18,7 +19,9 @@ export async function POST(
   const { recordingId } = await context.params;
 
   try {
-    const recording = await findRecording(recordingId);
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to retry this recording.", 401);
+    const recording = await findRecording(recordingId, ownerUserId);
 
     if (!recording) {
       return apiError("This recording does not exist.", 404);
