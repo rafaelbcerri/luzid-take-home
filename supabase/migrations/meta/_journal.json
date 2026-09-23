@@ -22,13 +22,6 @@
       "when": 1790186933552,
       "tag": "0002_nappy_sabra",
       "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1790188843868,
-      "tag": "0003_daffy_photon",
-      "breakpoints": true
     }
   ]
 }

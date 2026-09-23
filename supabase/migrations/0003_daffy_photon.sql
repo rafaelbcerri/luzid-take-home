@@ -1,1 +1,0 @@
-ALTER TABLE "process_steps" ADD COLUMN "evidence_annotations" jsonb DEFAULT '[]'::jsonb NOT NULL;
