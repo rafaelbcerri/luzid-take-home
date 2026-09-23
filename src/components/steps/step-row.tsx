@@ -373,7 +373,7 @@ export function StepRow({
 
       <td className="p-4">
         {step.system.trim().length > 0 ? (
-          <span className="inline-flex h-[22px] items-center rounded border border-ink-200 px-2 text-xs text-ink-700">
+          <span className="inline-flex min-h-[22px] max-w-full items-center rounded border border-ink-200 px-2 py-0.5 text-xs leading-snug break-words text-ink-700">
             {step.system}
           </span>
         ) : (
