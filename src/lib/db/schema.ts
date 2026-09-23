@@ -43,7 +43,6 @@ export const processSteps = pgTable(
     position: integer("position").notNull(),
     action: text("action").notNull(),
     system: text("system").notNull().default(""),
-    testData: text("test_data").notNull().default(""),
     description: text("description").notNull().default(""),
     responsible: text("responsible").notNull().default(""),
     expectedResult: text("expected_result").notNull().default(""),

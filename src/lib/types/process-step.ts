@@ -26,11 +26,7 @@ export type ProcessStep = {
   action: string;
   /** The application the step happens in, e.g. "Luzid" — "" when unclear. */
   system: string;
-  /** Concrete values a tester must type, e.g. "Quantity 1000" — "" when none. */
-  testData: string;
   description: string;
-  /** The role performing the step, e.g. "Process Analyst". */
-  responsible: string;
   expectedResult: string;
   timestampSeconds: number;
   /** Where the stored screenshot was taken — a consultant may move this without moving the step. */
@@ -44,9 +40,7 @@ export type StepFieldUpdates = Partial<
     ProcessStep,
     | "action"
     | "system"
-    | "testData"
     | "description"
-    | "responsible"
     | "expectedResult"
   >
 >;
@@ -70,9 +64,7 @@ export type RecordingWithSteps = Recording & {
 export type ExtractedStep = {
   action: string;
   system: string;
-  testData: string;
   description: string;
-  responsible: string;
   expectedResult: string;
   timestampSeconds: number;
 };

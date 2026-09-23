@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 const MAX_ACTION_LENGTH = 300;
 const MAX_SHORT_FIELD_LENGTH = 200;
 const MAX_TEXT_LENGTH = 2_000;
+const MAX_DESCRIPTION_LENGTH = 5_000;
 
 const shortField = (label: string) =>
   z
@@ -27,16 +28,10 @@ const updateStepRequestSchema = z
       .max(MAX_ACTION_LENGTH, "Keep the action under 300 characters.")
       .optional(),
     system: shortField("system"),
-    testData: z
-      .string()
-      .trim()
-      .max(MAX_TEXT_LENGTH, "Keep the test data under 2000 characters.")
-      .optional(),
-    responsible: shortField("responsible role"),
     description: z
       .string()
       .trim()
-      .max(MAX_TEXT_LENGTH, "Keep the description under 2000 characters.")
+      .max(MAX_DESCRIPTION_LENGTH, "Keep the description under 5000 characters.")
       .optional(),
     expectedResult: z
       .string()

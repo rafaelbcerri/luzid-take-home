@@ -46,9 +46,7 @@ function toDraft(step: SerializedStep): StepDraft {
   return {
     action: step.action,
     system: step.system,
-    testData: step.testData,
     description: step.description,
-    responsible: step.responsible,
     expectedResult: step.expectedResult,
   };
 }
@@ -131,9 +129,7 @@ export function StepRow({
       await onSave(step.id, {
         action: draft.action.trim(),
         system: draft.system.trim(),
-        testData: draft.testData.trim(),
         description: draft.description.trim(),
-        responsible: draft.responsible.trim(),
         expectedResult: draft.expectedResult.trim(),
       });
       setIsEditing(false);
@@ -227,33 +223,13 @@ export function StepRow({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <LabelledInput
-                  label="Test data"
-                  value={draft.testData}
-                  onChange={(event) =>
-                    updateDraftField("testData", event.target.value)
-                  }
-                  placeholder="Material: STEEL-PLATE-10MM"
-                  className="font-mono"
-                />
-                <LabelledInput
-                  label="Responsible"
-                  value={draft.responsible}
-                  onChange={(event) =>
-                    updateDraftField("responsible", event.target.value)
-                  }
-                  placeholder="Buyer"
-                />
-              </div>
-
               <AutoGrowingTextarea
                 label="Description"
                 value={draft.description}
                 onChange={(event) =>
                   updateDraftField("description", event.target.value)
                 }
-                placeholder="What exactly the user does, naming the fields and values on screen."
+                placeholder="What the user does, including any field names and test values shown on screen."
               />
 
               <AutoGrowingTextarea
@@ -387,11 +363,6 @@ export function StepRow({
         ) : (
           <EmptyCell />
         )}
-        {step.testData.trim().length > 0 ? (
-          <span className="mt-2 inline-flex items-center rounded bg-ink-100 px-2 py-0.5 font-mono text-xs text-ink-700">
-            {step.testData}
-          </span>
-        ) : null}
       </td>
 
       <td className="p-4">
