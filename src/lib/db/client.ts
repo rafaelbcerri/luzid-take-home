@@ -16,7 +16,7 @@ const postgresClient =
   globalForDatabase.postgresClient ??
   postgres(env.DATABASE_URL, { max: 10, prepare: false });
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   globalForDatabase.postgresClient = postgresClient;
 }
 
