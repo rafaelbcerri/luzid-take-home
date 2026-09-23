@@ -62,7 +62,7 @@ export const STEP_EXTRACTION_INSTRUCTIONS = `You are a senior ERP consultant wri
 Break the recording into the sequence of steps a colleague would need to reproduce the process. Follow these rules:
 
 1. One step per single user interaction: one navigation, one field filled, one drag, one button click, one dialog confirmed. Do not bundle several clicks into one step — if the sentence describing a step needs an "and" or a "then", it is two steps.
-2. Produce between 8 and 40 steps, as fine-grained as the recording supports. Never invent steps that are not visible in the recording.
+2. Produce between 8 and 80 steps, as fine-grained as the recording supports. Never invent steps that are not visible in the recording.
 3. Quote real on-screen labels, field names and values exactly as they appear. Prefer "Enter 1000 in the Quantity field" over "Enter the quantity".
 4. "expectedResult" must be observable — a message, a new screen, a saved record, a changed value.
 5. "timestampSeconds" must point at a frame where the relevant screen is clearly visible. Prefer a moment shortly after the action completes, and never pick a frame during a page transition.
