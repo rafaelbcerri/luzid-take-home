@@ -238,3 +238,22 @@ export async function appendStep(params: {
 
   return toProcessStep(row);
 }
+
+/** A step plus the recording it belongs to — what the frame picker needs in one read. */
+export async function findStepWithRecording(
+  stepId: string,
+): Promise<{ step: ProcessStep; recording: Recording } | null> {
+  const [row] = await db
+    .select()
+    .from(processSteps)
+    .innerJoin(recordings, eq(processSteps.recordingId, recordings.id))
+    .where(eq(processSteps.id, stepId))
+    .limit(1);
+
+  if (!row) return null;
+
+  return {
+    step: toProcessStep(row.process_steps),
+    recording: toRecording(row.recordings),
+  };
+}

@@ -1,7 +1,3 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import { STORAGE_BUCKETS } from "@/lib/config/env";
 import {
   listStepsForRecording,
@@ -19,6 +15,7 @@ import {
   captureFrameAtTimestamp,
   clampTimestampToVideo,
 } from "@/lib/video/capture-frame";
+import { withLocalVideo } from "@/lib/video/with-local-video";
 
 /**
  * Runs a recording through the whole pipeline: Gemini extracts the steps, then
@@ -30,57 +27,54 @@ import {
  * user can act on.
  */
 export async function processRecording(recording: Recording): Promise<void> {
-  let workingDirectory: string | null = null;
-
   try {
-    workingDirectory = await mkdtemp(join(tmpdir(), "process-recording-"));
-    const localVideoPath = join(workingDirectory, "source-video");
+    await withLocalVideo(
+      recording.videoPath,
+      async (localVideoPath, videoBytes) => {
+        await updateRecordingStatus({
+          recordingId: recording.id,
+          status: "analyzing",
+        });
 
-    const videoBytes = await downloadStoredVideo(recording.videoPath);
-    await writeFile(localVideoPath, videoBytes);
+        const extractedProcess = await extractProcessSteps({
+          videoBytes,
+          mimeType: guessMimeTypeFromPath(recording.videoPath),
+        });
 
-    await updateRecordingStatus({
-      recordingId: recording.id,
-      status: "analyzing",
-    });
+        const savedSteps = await replaceSteps({
+          recordingId: recording.id,
+          steps: extractedProcess.steps,
+        });
 
-    const extractedProcess = await extractProcessSteps({
-      videoBytes,
-      mimeType: guessMimeTypeFromPath(recording.videoPath),
-    });
+        if (savedSteps.length === 0) {
+          await updateRecordingStatus({
+            recordingId: recording.id,
+            status: "failed",
+            errorMessage:
+              "Gemini did not find any distinct steps in this recording. Try a video that shows a full process from start to finish.",
+          });
+          return;
+        }
 
-    const savedSteps = await replaceSteps({
-      recordingId: recording.id,
-      steps: extractedProcess.steps,
-    });
+        await updateRecordingStatus({
+          recordingId: recording.id,
+          status: "capturing",
+          title: extractedProcess.title,
+        });
 
-    if (savedSteps.length === 0) {
-      await updateRecordingStatus({
-        recordingId: recording.id,
-        status: "failed",
-        errorMessage:
-          "Gemini did not find any distinct steps in this recording. Try a video that shows a full process from start to finish.",
-      });
-      return;
-    }
+        await captureScreenshotsForSteps({
+          recordingId: recording.id,
+          localVideoPath,
+          durationSeconds: recording.durationSeconds,
+          steps: savedSteps,
+        });
 
-    await updateRecordingStatus({
-      recordingId: recording.id,
-      status: "capturing",
-      title: extractedProcess.title,
-    });
-
-    await captureScreenshotsForSteps({
-      recordingId: recording.id,
-      localVideoPath,
-      durationSeconds: recording.durationSeconds,
-      steps: savedSteps,
-    });
-
-    await updateRecordingStatus({
-      recordingId: recording.id,
-      status: "ready",
-    });
+        await updateRecordingStatus({
+          recordingId: recording.id,
+          status: "ready",
+        });
+      },
+    );
   } catch (error) {
     console.error(`[pipeline] recording ${recording.id} failed`, error);
 
@@ -89,10 +83,6 @@ export async function processRecording(recording: Recording): Promise<void> {
       status: "failed",
       errorMessage: toUserFacingMessage(error),
     });
-  } finally {
-    if (workingDirectory) {
-      await rm(workingDirectory, { recursive: true, force: true });
-    }
   }
 }
 
@@ -153,21 +143,6 @@ export async function reprocessRecording(recording: Recording): Promise<void> {
   });
 
   await processRecording(recording);
-}
-
-/** Storage failures are reported in terms the user can act on. */
-async function downloadStoredVideo(videoPath: string): Promise<Buffer> {
-  try {
-    return await storage.download({
-      bucket: STORAGE_BUCKETS.recordings,
-      path: videoPath,
-    });
-  } catch (error) {
-    console.error(`[pipeline] could not download ${videoPath}`, error);
-    throw new Error(
-      "We could not retrieve the stored video for this recording. Please upload it again.",
-    );
-  }
 }
 
 function guessMimeTypeFromPath(path: string): string {
