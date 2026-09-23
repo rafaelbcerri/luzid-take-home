@@ -4,7 +4,9 @@ export function authErrorMessage(code: string | undefined): string {
     case "invalid_credentials":
       return "Check your email and password, then try again.";
     case "email_not_confirmed":
-      return "Check your inbox and verify your email before signing in.";
+      return "Sign-in is blocked by the authentication settings. Contact your workspace administrator.";
+    case "user_already_exists":
+      return "This email already has an account. Sign in or reset your password.";
     case "weak_password":
       return "Choose a password with at least 8 characters.";
     default:

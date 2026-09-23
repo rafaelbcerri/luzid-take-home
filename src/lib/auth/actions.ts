@@ -60,21 +60,20 @@ export async function signUpAction(
   }
 
   const client = await createAuthServerClient();
-  const { error } = await client.auth.signUp({
-    ...parsed.data,
-    options: {
-      emailRedirectTo: new URL("/auth/callback", env.APP_ORIGIN).toString(),
-    },
-  });
+  const { data, error } = await client.auth.signUp(parsed.data);
 
-  if (error && error.code !== "user_already_exists") {
+  if (error) {
     return { error: authErrorMessage(error.code), success: null };
   }
 
-  return {
-    ...EMPTY_STATE,
-    success: "Check your inbox for a verification link, then sign in.",
-  };
+  if (!data.session) {
+    return {
+      error: "Your account was created, but you are not signed in. Try signing in.",
+      success: null,
+    };
+  }
+
+  redirect("/");
 }
 
 export async function requestPasswordResetAction(

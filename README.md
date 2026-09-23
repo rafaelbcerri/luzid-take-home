@@ -36,12 +36,12 @@ the server. Set `APP_ORIGIN` to the exact origin where Next.js runs, such as
 `http://127.0.0.1:3000`. The `recordings` and `screenshots` buckets are created
 automatically on the first upload.
 
-Local Supabase sends signup and password-reset messages to Mailpit at
-`http://127.0.0.1:54324`. The checked-in Auth config requires email
-confirmation and allows callbacks on ports 3000 and 3001. Restart local
+Local Supabase sends password-reset messages to Mailpit at
+`http://127.0.0.1:54324`. The checked-in Auth config disables signup email
+confirmation, so a new consultant signs in immediately. Restart local
 Supabase after changing `supabase/config.toml`. On a hosted Supabase project,
-enable email confirmation and add `<APP_ORIGIN>/auth/callback` to the Auth
-redirect allowlist before inviting users.
+disable **Confirm email** and add `<APP_ORIGIN>/auth/callback` to the Auth
+redirect allowlist for password recovery.
 
 Apply the migrations before starting this version of the app. The owner column
 is required; the ownership migration assumes legacy test recordings have been
@@ -71,8 +71,8 @@ state to lose when the server restarts.
 
 ## Accounts and sharing
 
-Create an account with a work email and password, verify the email, and sign
-in. The workspace and all editing routes require that account. A consultant
+Create an account with a work email and password to enter the workspace
+immediately. The workspace and all editing routes require that account. A consultant
 can use **Share this script** to create one public, read-only link per
 recording. Anyone with the link can see the title, ordered steps, and
 screenshots. They cannot see the source video or edit the script. **Revoke
@@ -141,7 +141,8 @@ node --env-file=.env.local --import tsx scripts/check-auth-flow.ts
 node --env-file=.env.local --import tsx scripts/check-upload-flow.ts
 ```
 
-The Auth check uses local Mailpit. The upload check generates a temporary video
+The Auth check confirms that signup creates a session without a confirmation
+email. The upload check generates a temporary video
 with FFmpeg and calls Gemini, so it needs a valid API key.
 
 ## Limits

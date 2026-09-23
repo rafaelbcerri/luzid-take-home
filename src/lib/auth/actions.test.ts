@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { redirect } from "next/navigation";
 
 import { createAuthServerClient } from "./server-client";
 import { signInAction, signUpAction } from "./actions";
@@ -22,6 +23,7 @@ describe("account actions", () => {
   beforeEach(() => {
     signInWithPassword.mockReset();
     signUp.mockReset();
+    vi.mocked(redirect).mockReset();
     vi.mocked(createAuthServerClient).mockResolvedValue({
       auth: { signInWithPassword, signUp },
     } as never);
@@ -33,15 +35,30 @@ describe("account actions", () => {
     expect(signUp).not.toHaveBeenCalled();
   });
 
-  it("explains an unverified email on sign in", async () => {
+  it("explains a Supabase confirmation mismatch on sign in", async () => {
     signInWithPassword.mockResolvedValue({ error: { code: "email_not_confirmed" } });
     const result = await signInAction(emptyState, credentials("jane@company.com", "secret123"));
-    expect(result.error).toMatch(/verify your email/i);
+    expect(result.error).toMatch(/contact your workspace administrator/i);
   });
 
-  it("shows the confirmation next step after signup", async () => {
-    signUp.mockResolvedValue({ error: null });
+  it("opens the workspace when signup creates a session", async () => {
+    signUp.mockResolvedValue({ data: { session: { access_token: "test" } }, error: null });
+    await signUpAction(emptyState, credentials("jane@company.com", "secret123"));
+    expect(signUp).toHaveBeenCalledWith({ email: "jane@company.com", password: "secret123" });
+    expect(redirect).toHaveBeenCalledWith("/");
+  });
+
+  it("explains an existing account during signup", async () => {
+    signUp.mockResolvedValue({ data: { session: null }, error: { code: "user_already_exists" } });
     const result = await signUpAction(emptyState, credentials("jane@company.com", "secret123"));
-    expect(result.success).toMatch(/check your inbox/i);
+    expect(result.error).toMatch(/sign in/i);
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("does not claim signup succeeded without a session", async () => {
+    signUp.mockResolvedValue({ data: { session: null }, error: null });
+    const result = await signUpAction(emptyState, credentials("jane@company.com", "secret123"));
+    expect(result.error).toMatch(/try signing in/i);
+    expect(redirect).not.toHaveBeenCalled();
   });
 });
