@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens taken from luzid.io: deep ink surfaces, a single orange accent,
+ * tight display letter-spacing and small radii. Light mode only, by design.
+ */
+@theme {
+  --color-ink-950: #0b1116;
+  --color-ink-900: #121c24;
+  --color-ink-800: #1b2833;
+  --color-ink-700: #2a3a48;
+  --color-ink-500: #5b6b7a;
+  --color-ink-400: #8798a6;
+  --color-ink-300: #c8d3dd;
+  --color-ink-200: #e2e8ee;
+  --color-ink-100: #f1f4f7;
+  --color-ink-50: #f8fafb;
+
+  --color-accent-700: #b93318;
+  --color-accent-600: #d13f21;
+  --color-accent-500: #e74b2e;
+  --color-accent-100: #fde8e3;
+  --color-accent-50: #fdf3f0;
+
+  --color-success-600: #17805a;
+  --color-success-50: #e7f6f0;
+  --color-warning-600: #b4690e;
+  --color-warning-50: #fdf3e5;
+  --color-danger-600: #c0341f;
+  --color-danger-50: #fdeceb;
+
+  --radius-card: 10px;
+  --radius-control: 6px;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    @apply bg-white text-ink-900 font-sans antialiased;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Display type on this site is medium weight with negative tracking. */
+  h1,
+  h2,
+  h3 {
+    @apply font-medium tracking-[-0.03em];
+  }
+
+  /* One consistent focus ring for every interactive element. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent-500;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility surface-card {
+  @apply rounded-[var(--radius-card)] border border-ink-200 bg-white;
+}
+
+/* The hero glow behind the dark header, matching luzid.io. */
+@utility ink-gradient {
+  background:
+    radial-gradient(
+      60% 100% at 78% 0%,
+      rgba(231, 75, 46, 0.32) 0%,
+      rgba(231, 75, 46, 0) 62%
+    ),
+    linear-gradient(180deg, #121c24 0%, #0b1116 100%);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@utility skeleton {
+  @apply relative overflow-hidden bg-ink-100;
+
+  &::after {
+    @apply absolute inset-0 content-[''];
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.7),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+    transform: translateX(-100%);
+  }
 }
