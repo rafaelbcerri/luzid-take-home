@@ -48,3 +48,5 @@ next-env.d.ts
 # supabase cli working files
 supabase/.temp/
 supabase/.branches/
+
+.claude/worktrees/
