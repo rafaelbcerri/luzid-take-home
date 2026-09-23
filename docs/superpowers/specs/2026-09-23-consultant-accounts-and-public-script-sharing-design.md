@@ -61,7 +61,7 @@ Before making ownership required, remove the existing test recording rows and th
 
 - Signup and login distinguish invalid credentials, unverified email, expired reset link, and temporary service failure with instructions the consultant can act on. Avoid exposing whether an unrelated email address has an account in password-reset feedback.
 - A failed share creation or revocation leaves the last confirmed sharing state visible and offers retry. Copy-link failure lets the consultant select the URL manually.
-- Invalid, expired, or revoked public tokens show a neutral unavailable-link page. A missing screenshot shows a placeholder without failing the whole script.
+- Invalid or revoked public tokens show a neutral unavailable-link page. A missing screenshot shows a placeholder without failing the whole script.
 - Pipeline failures continue to be recorded as `status: "failed"` with consultant-facing text; technical details go to server logs.
 
 ## Verification and acceptance
