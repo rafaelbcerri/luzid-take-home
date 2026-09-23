@@ -106,3 +106,55 @@ export function PencilIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function GripIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path
+        d="M9 6.01V6M9 12.01V12M9 18.01V18M15 6.01V6M15 12.01V12M15 18.01V18"
+        strokeWidth={2.5}
+      />
+    </svg>
+  );
+}
+
+export function FrameIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 9h18M9 5v14" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="M15 5 8 12l7 7" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+export function ExpandIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5" />
+    </svg>
+  );
+}
