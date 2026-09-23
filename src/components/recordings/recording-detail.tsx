@@ -115,7 +115,7 @@ export function RecordingDetail({
           <div className="mb-2 flex items-center gap-2.5">
             <StatusBadge status={recording.status} />
             {recording.status === "ready" ? (
-              <span className="text-xs text-ink-400">{stepCountLabel}</span>
+              <span className="text-[13px] text-ink-500">{stepCountLabel}</span>
             ) : null}
           </div>
 
@@ -138,7 +138,7 @@ export function RecordingDetail({
             }}
           />
 
-          <p className="mt-1.5 text-sm text-ink-400">
+          <p className="mt-1.5 text-sm text-ink-500">
             {recording.originalFileName}
             {recording.durationSeconds
               ? ` · ${formatTimestamp(recording.durationSeconds)}`

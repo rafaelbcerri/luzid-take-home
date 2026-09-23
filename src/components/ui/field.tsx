@@ -50,7 +50,7 @@ export function AutoGrowingTextarea({
 
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.06em] text-ink-400 uppercase">
+      <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.06em] text-ink-500 uppercase">
         {label}
       </span>
       <textarea
@@ -65,7 +65,7 @@ export function AutoGrowingTextarea({
         )}
       />
       {hint ? (
-        <span className="mt-1 block text-xs text-ink-400">{hint}</span>
+        <span className="mt-1 block text-xs text-ink-500">{hint}</span>
       ) : null}
     </label>
   );
