@@ -8,6 +8,7 @@ import type {
   Recording,
   RecordingStatus,
   RecordingWithSteps,
+  StepFieldUpdates,
 } from "@/lib/types/process-step";
 
 type RecordingRow = typeof recordings.$inferSelect;
@@ -32,7 +33,10 @@ function toProcessStep(row: ProcessStepRow): ProcessStep {
     recordingId: row.recordingId,
     position: row.position,
     action: row.action,
+    system: row.system,
+    testData: row.testData,
     description: row.description,
+    responsible: row.responsible,
     expectedResult: row.expectedResult,
     timestampSeconds: row.timestampSeconds,
     screenshotPath: row.screenshotPath,
@@ -131,7 +135,10 @@ export async function replaceSteps(params: {
           recordingId: params.recordingId,
           position: index,
           action: step.action,
+          system: step.system,
+          testData: step.testData,
           description: step.description,
+          responsible: step.responsible,
           expectedResult: step.expectedResult,
           timestampSeconds: step.timestampSeconds,
         })),
@@ -152,24 +159,15 @@ export async function setStepScreenshotPath(params: {
     .where(eq(processSteps.id, params.stepId));
 }
 
-export async function updateStep(params: {
-  stepId: string;
-  action?: string;
-  description?: string;
-  expectedResult?: string;
-}): Promise<ProcessStep | null> {
+export async function updateStep(
+  params: { stepId: string } & StepFieldUpdates,
+): Promise<ProcessStep | null> {
+  const { stepId, ...changes } = params;
+
   const [row] = await db
     .update(processSteps)
-    .set({
-      ...(params.action !== undefined ? { action: params.action } : {}),
-      ...(params.description !== undefined
-        ? { description: params.description }
-        : {}),
-      ...(params.expectedResult !== undefined
-        ? { expectedResult: params.expectedResult }
-        : {}),
-    })
-    .where(eq(processSteps.id, params.stepId))
+    .set(changes)
+    .where(eq(processSteps.id, stepId))
     .returning();
 
   return row ? toProcessStep(row) : null;
@@ -220,7 +218,10 @@ export async function appendStep(params: {
       recordingId: params.recordingId,
       position: nextPosition,
       action: "New step",
+      system: "",
+      testData: "",
       description: "",
+      responsible: "",
       expectedResult: "",
       timestampSeconds: lastTimestamp,
     })

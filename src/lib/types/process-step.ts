@@ -24,11 +24,30 @@ export type ProcessStep = {
   recordingId: string;
   position: number;
   action: string;
+  /** The application the step happens in, e.g. "Luzid" — "" when unclear. */
+  system: string;
+  /** Concrete values a tester must type, e.g. "Quantity 1000" — "" when none. */
+  testData: string;
   description: string;
+  /** The role performing the step, e.g. "Process Analyst". */
+  responsible: string;
   expectedResult: string;
   timestampSeconds: number;
   screenshotPath: string | null;
 };
+
+/** The step fields a consultant can edit by hand, all optional in a PATCH. */
+export type StepFieldUpdates = Partial<
+  Pick<
+    ProcessStep,
+    | "action"
+    | "system"
+    | "testData"
+    | "description"
+    | "responsible"
+    | "expectedResult"
+  >
+>;
 
 export type Recording = {
   id: string;
@@ -48,7 +67,10 @@ export type RecordingWithSteps = Recording & {
 /** The shape Gemini is asked to return, before we persist or capture frames. */
 export type ExtractedStep = {
   action: string;
+  system: string;
+  testData: string;
   description: string;
+  responsible: string;
   expectedResult: string;
   timestampSeconds: number;
 };

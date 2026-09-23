@@ -1,8 +1,9 @@
 "use client";
 
+import type { StepDraft } from "@/components/steps/step-row";
+import { StepTable } from "@/components/steps/step-table";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "@/components/ui/icons";
-import { StepCard, type StepDraft } from "@/components/steps/step-card";
 import type { SerializedStep } from "@/lib/api/serialize-recording";
 
 type StepListProps = {
@@ -41,22 +42,21 @@ export function StepList({
   }
 
   return (
-    <div className="space-y-3">
-      <ul className="space-y-3">
-        {steps.map((step, index) => (
-          <StepCard
-            key={step.id}
-            step={step}
-            stepNumber={index + 1}
-            isFirst={index === 0}
-            isLast={index === steps.length - 1}
-            onSave={onSaveStep}
-            onDelete={onDeleteStep}
-            onMove={onMoveStep}
-            onOpenScreenshot={onOpenScreenshot}
-          />
-        ))}
-      </ul>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg text-ink-900">Process Steps</h2>
+        <p className="mt-0.5 text-sm text-ink-500">
+          Detailed breakdown of workflow steps
+        </p>
+      </div>
+
+      <StepTable
+        steps={steps}
+        onSaveStep={onSaveStep}
+        onDeleteStep={onDeleteStep}
+        onMoveStep={onMoveStep}
+        onOpenScreenshot={onOpenScreenshot}
+      />
 
       <Button
         variant="secondary"
@@ -67,6 +67,6 @@ export function StepList({
         <PlusIcon className="size-4" />
         Add a step
       </Button>
-    </div>
+    </section>
   );
 }

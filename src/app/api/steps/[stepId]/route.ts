@@ -8,7 +8,15 @@ import { deleteStep, updateStep } from "@/lib/db/recordings-repository";
 export const runtime = "nodejs";
 
 const MAX_ACTION_LENGTH = 300;
+const MAX_SHORT_FIELD_LENGTH = 200;
 const MAX_TEXT_LENGTH = 2_000;
+
+const shortField = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(MAX_SHORT_FIELD_LENGTH, `Keep the ${label} under 200 characters.`)
+    .optional();
 
 const updateStepRequestSchema = z
   .object({
@@ -18,6 +26,13 @@ const updateStepRequestSchema = z
       .min(1, "An action is required — it is the line a reader follows.")
       .max(MAX_ACTION_LENGTH, "Keep the action under 300 characters.")
       .optional(),
+    system: shortField("system"),
+    testData: z
+      .string()
+      .trim()
+      .max(MAX_TEXT_LENGTH, "Keep the test data under 2000 characters.")
+      .optional(),
+    responsible: shortField("responsible role"),
     description: z
       .string()
       .trim()

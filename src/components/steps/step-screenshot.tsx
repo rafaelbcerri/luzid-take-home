@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { classNames } from "@/components/ui/class-names";
 import { ImageIcon } from "@/components/ui/icons";
 import { formatTimestamp } from "@/lib/format/timestamp";
 
@@ -11,6 +12,8 @@ type StepScreenshotProps = {
   timestampSeconds: number;
   stepNumber: number;
   onOpen: () => void;
+  /** Sizing for the frame, so the same thumbnail fits a table cell or a card. */
+  frameClassName?: string;
 };
 
 /** Screenshot thumbnail, with a graceful placeholder when a frame is missing. */
@@ -19,15 +22,21 @@ export function StepScreenshot({
   timestampSeconds,
   stepNumber,
   onOpen,
+  frameClassName = "h-32 w-full sm:w-60",
 }: StepScreenshotProps) {
   const [hasLoadError, setHasLoadError] = useState(false);
 
   if (!screenshotUrl || hasLoadError) {
     return (
-      <div className="grid h-32 w-full shrink-0 place-items-center rounded-[var(--radius-control)] border border-dashed border-ink-200 bg-ink-50 text-center sm:w-60">
-        <span className="px-3 text-xs text-ink-400">
-          <ImageIcon className="mx-auto mb-1.5 size-4" />
-          No screenshot for this step
+      <div
+        className={classNames(
+          "grid shrink-0 place-items-center rounded-[var(--radius-control)] border border-dashed border-ink-200 bg-ink-50 text-center",
+          frameClassName,
+        )}
+      >
+        <span className="px-2 text-[11px] text-ink-400">
+          <ImageIcon className="mx-auto mb-1 size-4" />
+          No screenshot
         </span>
       </div>
     );
@@ -38,7 +47,10 @@ export function StepScreenshot({
       type="button"
       onClick={onOpen}
       aria-label={`Open the screenshot for step ${stepNumber} full size`}
-      className="group relative h-32 w-full shrink-0 overflow-hidden rounded-[var(--radius-control)] border border-ink-200 bg-ink-100 sm:w-60"
+      className={classNames(
+        "group relative shrink-0 overflow-hidden rounded-[var(--radius-control)] border border-ink-200 bg-ink-100",
+        frameClassName,
+      )}
     >
       <Image
         src={screenshotUrl}

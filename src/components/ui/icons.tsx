@@ -90,3 +90,19 @@ export function ImageIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function MoreIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="M12 6.01V6M12 12.01V12M12 18.01V18" strokeWidth={2.5} />
+    </svg>
+  );
+}
+
+export function PencilIcon({ className }: IconProps) {
+  return (
+    <svg {...BASE_ICON_PROPS} className={className}>
+      <path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5 4 20Z" />
+    </svg>
+  );
+}

@@ -3,7 +3,7 @@
  * `requestJson`, so error handling is identical everywhere in the UI.
  */
 import type { SerializedRecording, SerializedStep } from "@/lib/api/serialize-recording";
-import type { Recording } from "@/lib/types/process-step";
+import type { Recording, StepFieldUpdates } from "@/lib/types/process-step";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -101,11 +101,7 @@ export function reorderStepsRequest(
 
 export function updateStepRequest(
   stepId: string,
-  changes: {
-    action?: string;
-    description?: string;
-    expectedResult?: string;
-  },
+  changes: StepFieldUpdates,
 ) {
   return requestJson<{ step: SerializedStep }>(`/api/steps/${stepId}`, {
     method: "PATCH",

@@ -15,3 +15,12 @@ export function formatRelativeDate(isoDate: string): string {
     minute: "2-digit",
   });
 }
+
+/** `M:SS.t` — the notation the frame picker uses, where a tenth of a second matters. */
+export function formatTimestampWithTenths(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, Math.round(totalSeconds * 10) / 10);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds - minutes * 60;
+
+  return `${minutes}:${seconds.toFixed(1).padStart(4, "0")}`;
+}

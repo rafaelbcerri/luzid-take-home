@@ -62,7 +62,7 @@ components compose them.
 ## Before you say it works
 
 ```bash
-npm run check        # types + lint, both must be clean
+npm run check        # types + lint + unit tests, all three must be clean
 ```
 
 Then exercise the real flow: upload a video, watch the statuses advance, edit a

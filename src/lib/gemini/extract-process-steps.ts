@@ -17,7 +17,10 @@ const extractedProcessSchema = z.object({
     .array(
       z.object({
         action: z.string().trim().min(1),
+        system: z.string().trim().default(""),
+        testData: z.string().trim().default(""),
         description: z.string().trim().default(""),
+        responsible: z.string().trim().default(""),
         expectedResult: z.string().trim().default(""),
         timestampSeconds: z.number().min(0).catch(0),
       }),

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import type { StepDraft } from "@/components/steps/step-card";
+import type { StepDraft } from "@/components/steps/step-row";
 import {
   addStep,
   deleteStepRequest,
