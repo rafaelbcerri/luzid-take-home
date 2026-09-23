@@ -33,6 +33,8 @@ export type ProcessStep = {
   responsible: string;
   expectedResult: string;
   timestampSeconds: number;
+  /** Where the stored screenshot was taken — a consultant may move this without moving the step. */
+  evidenceTimestampSeconds: number;
   screenshotPath: string | null;
 };
 

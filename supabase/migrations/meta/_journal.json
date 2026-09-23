@@ -15,6 +15,13 @@
       "when": 1790185601015,
       "tag": "0001_overrated_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790186933552,
+      "tag": "0002_nappy_sabra",
+      "breakpoints": true
     }
   ]
 }

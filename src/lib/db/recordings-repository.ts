@@ -39,6 +39,7 @@ function toProcessStep(row: ProcessStepRow): ProcessStep {
     responsible: row.responsible,
     expectedResult: row.expectedResult,
     timestampSeconds: row.timestampSeconds,
+    evidenceTimestampSeconds: row.evidenceTimestampSeconds,
     screenshotPath: row.screenshotPath,
   };
 }
@@ -149,14 +150,21 @@ export async function replaceSteps(params: {
   });
 }
 
-export async function setStepScreenshotPath(params: {
+export async function setStepEvidence(params: {
   stepId: string;
   screenshotPath: string;
-}): Promise<void> {
-  await db
+  evidenceTimestampSeconds: number;
+}): Promise<ProcessStep | null> {
+  const [row] = await db
     .update(processSteps)
-    .set({ screenshotPath: params.screenshotPath })
-    .where(eq(processSteps.id, params.stepId));
+    .set({
+      screenshotPath: params.screenshotPath,
+      evidenceTimestampSeconds: params.evidenceTimestampSeconds,
+    })
+    .where(eq(processSteps.id, params.stepId))
+    .returning();
+
+  return row ? toProcessStep(row) : null;
 }
 
 export async function updateStep(
@@ -224,6 +232,7 @@ export async function appendStep(params: {
       responsible: "",
       expectedResult: "",
       timestampSeconds: lastTimestamp,
+      evidenceTimestampSeconds: lastTimestamp,
     })
     .returning();
 

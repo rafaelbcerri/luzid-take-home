@@ -6,7 +6,7 @@ import { STORAGE_BUCKETS } from "@/lib/config/env";
 import {
   listStepsForRecording,
   replaceSteps,
-  setStepScreenshotPath,
+  setStepEvidence,
   updateRecordingStatus,
 } from "@/lib/db/recordings-repository";
 import { extractProcessSteps } from "@/lib/gemini/extract-process-steps";
@@ -107,13 +107,15 @@ async function captureScreenshotsForSteps(params: {
   steps: ProcessStep[];
 }): Promise<void> {
   for (const step of params.steps) {
+    const evidenceTimestampSeconds = clampTimestampToVideo(
+      step.timestampSeconds,
+      params.durationSeconds,
+    );
+
     try {
       const pngBytes = await captureFrameAtTimestamp({
         videoPath: params.localVideoPath,
-        timestampSeconds: clampTimestampToVideo(
-          step.timestampSeconds,
-          params.durationSeconds,
-        ),
+        timestampSeconds: evidenceTimestampSeconds,
       });
 
       const screenshotPath = buildStepScreenshotPath(
@@ -128,12 +130,13 @@ async function captureScreenshotsForSteps(params: {
         contentType: "image/png",
       });
 
-      await setStepScreenshotPath({ stepId: step.id, screenshotPath });
+      await setStepEvidence({
+        stepId: step.id,
+        screenshotPath,
+        evidenceTimestampSeconds,
+      });
     } catch (error) {
-      console.error(
-        `[pipeline] screenshot for step ${step.id} failed`,
-        error,
-      );
+      console.error(`[pipeline] screenshot for step ${step.id} failed`, error);
     }
   }
 }

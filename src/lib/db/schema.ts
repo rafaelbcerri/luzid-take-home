@@ -48,6 +48,9 @@ export const processSteps = pgTable(
     responsible: text("responsible").notNull().default(""),
     expectedResult: text("expected_result").notNull().default(""),
     timestampSeconds: real("timestamp_seconds").notNull().default(0),
+    evidenceTimestampSeconds: real("evidence_timestamp_seconds")
+      .notNull()
+      .default(0),
     screenshotPath: text("screenshot_path"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
