@@ -8,7 +8,7 @@ import { listRecordings } from "@/lib/db/recordings-repository";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Test Scripts · Luzid",
+  title: "Luzid · Take Home",
   description:
     "Turn a screen recording into an editable test script with steps and screenshots.",
 };
@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <PageShell>
       <div className="space-y-8">
-        <Hero recordingCount={recordings.length} />
+        {/*<Hero recordingCount={recordings.length} />*/}
         <UploadPanel />
         <RecordingList recordings={recordings} />
       </div>

@@ -382,12 +382,6 @@ export function StepRow({
             onOpen={() => onOpenScreenshot(step)}
             onChangeFrame={() => onChangeEvidence(step)}
           />
-          {step.screenshotUrl ? (
-            <Button size="sm" variant="secondary" onClick={() => onAnnotateEvidence(step)}>
-              <PencilIcon className="size-3.5" />
-              {step.evidenceAnnotations.length > 0 ? "Edit highlights" : "Highlight evidence"}
-            </Button>
-          ) : null}
         </div>
       </td>
 

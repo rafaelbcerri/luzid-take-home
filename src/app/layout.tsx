@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Test Scripts · Luzid",
+  title: "Luzid · Take Home",
   description:
     "Turn a screen recording into an editable test script with steps and screenshots.",
 };
