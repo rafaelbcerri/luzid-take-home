@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+import { EvidenceAnnotationOverlay } from "@/components/steps/evidence-annotation-overlay";
+import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
 import { formatTimestamp } from "@/lib/format/timestamp";
 
 type ScreenshotLightboxProps = {
   screenshotUrl: string;
+  annotations: EvidenceAnnotation[];
   caption: string;
   timestampSeconds: number;
   onClose: () => void;
@@ -15,10 +18,12 @@ type ScreenshotLightboxProps = {
 /** Full-size screenshot overlay, dismissed with Escape or a click outside. */
 export function ScreenshotLightbox({
   screenshotUrl,
+  annotations,
   caption,
   timestampSeconds,
   onClose,
 }: ScreenshotLightboxProps) {
+  const [imageSize, setImageSize] = useState({ width: 1280, height: 720 });
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -51,8 +56,10 @@ export function ScreenshotLightbox({
           width={1280}
           height={800}
           unoptimized
+          onLoad={(event) => setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
           className="h-auto max-h-[80vh] w-full object-contain"
         />
+        <EvidenceAnnotationOverlay annotations={annotations} imageWidth={imageSize.width} imageHeight={imageSize.height} />
       </div>
 
       <p className="text-center text-sm text-ink-300">

@@ -24,6 +24,7 @@ type StepTableProps = {
   onMoveStepToPosition: (stepId: string, position: number) => Promise<void>;
   onInsertStep: (afterStepId: string) => Promise<void>;
   onChangeEvidence: (step: SerializedStep) => void;
+  onAnnotateEvidence: (step: SerializedStep) => void;
   onOpenScreenshot: (step: SerializedStep) => void;
 };
 
@@ -36,6 +37,7 @@ export function StepTable({
   onMoveStepToPosition,
   onInsertStep,
   onChangeEvidence,
+  onAnnotateEvidence,
   onOpenScreenshot,
 }: StepTableProps) {
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
@@ -103,6 +105,7 @@ export function StepTable({
                 onMoveToPosition={onMoveStepToPosition}
                 onInsertBelow={onInsertStep}
                 onChangeEvidence={onChangeEvidence}
+                onAnnotateEvidence={onAnnotateEvidence}
                 onOpenScreenshot={onOpenScreenshot}
                 onDragStart={() => setDraggedStepId(step.id)}
                 onDragOver={() => setDropTargetStepId(step.id)}

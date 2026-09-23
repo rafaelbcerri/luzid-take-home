@@ -4,14 +4,17 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { EvidenceAnnotationOverlay } from "@/components/steps/evidence-annotation-overlay";
 import { classNames } from "@/components/ui/class-names";
 import { FrameIcon, ImageIcon } from "@/components/ui/icons";
 import { formatTimestampWithTenths } from "@/lib/format/timestamp";
+import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
 
 type StepScreenshotSize = "thumbnail" | "panel";
 
 type StepScreenshotProps = {
   screenshotUrl: string | null;
+  annotations: EvidenceAnnotation[];
   timestampSeconds: number;
   stepNumber: number;
   onOpen: () => void;
@@ -33,6 +36,7 @@ const IMAGE_SIZES: Record<StepScreenshotSize, string> = {
 /** The evidence for one step, with a graceful placeholder when a frame is missing. */
 export function StepScreenshot({
   screenshotUrl,
+  annotations,
   timestampSeconds,
   stepNumber,
   onOpen,
@@ -40,6 +44,7 @@ export function StepScreenshot({
   onChangeFrame,
 }: StepScreenshotProps) {
   const [hasLoadError, setHasLoadError] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 1280, height: 720 });
   const timecode = formatTimestampWithTenths(timestampSeconds);
 
   if (!screenshotUrl || hasLoadError) {
@@ -82,9 +87,11 @@ export function StepScreenshot({
         fill
         sizes={IMAGE_SIZES[size]}
         unoptimized
+        onLoad={(event) => setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
         onError={() => setHasLoadError(true)}
-        className="object-cover object-top transition-transform duration-200 group-hover:scale-[1.02]"
+        className="object-contain"
       />
+      <EvidenceAnnotationOverlay annotations={annotations} imageWidth={imageSize.width} imageHeight={imageSize.height} />
       <span className="absolute right-1.5 bottom-1.5 rounded bg-ink-950/80 px-1.5 py-0.5 font-mono text-[11px] text-white">
         {timecode}
       </span>

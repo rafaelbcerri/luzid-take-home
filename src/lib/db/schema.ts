@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   real,
@@ -51,6 +52,10 @@ export const processSteps = pgTable(
       .notNull()
       .default(0),
     screenshotPath: text("screenshot_path"),
+    evidenceAnnotations: jsonb("evidence_annotations")
+      .$type<import("@/lib/evidence/annotation-geometry").EvidenceAnnotation[]>()
+      .notNull()
+      .default([]),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

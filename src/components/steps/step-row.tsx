@@ -36,6 +36,7 @@ type StepRowProps = {
   onMoveToPosition: (stepId: string, position: number) => Promise<void>;
   onInsertBelow: (stepId: string) => Promise<void>;
   onChangeEvidence: (step: SerializedStep) => void;
+  onAnnotateEvidence: (step: SerializedStep) => void;
   onOpenScreenshot: (step: SerializedStep) => void;
   onDragStart: () => void;
   onDragOver: () => void;
@@ -72,6 +73,7 @@ export function StepRow({
   onMoveToPosition,
   onInsertBelow,
   onChangeEvidence,
+  onAnnotateEvidence,
   onOpenScreenshot,
   onDragStart,
   onDragOver,
@@ -275,6 +277,7 @@ export function StepRow({
               </span>
               <StepScreenshot
                 screenshotUrl={step.screenshotUrl}
+                annotations={step.evidenceAnnotations}
                 timestampSeconds={step.evidenceTimestampSeconds}
                 stepNumber={stepNumber}
                 size="panel"
@@ -299,6 +302,10 @@ export function StepRow({
                   <ExpandIcon className="size-4" />
                 </Button>
               </div>
+              <Button variant="secondary" disabled={!step.screenshotUrl} onClick={() => onAnnotateEvidence(step)}>
+                <PencilIcon className="size-4" />
+                Highlight evidence
+              </Button>
               <p className="text-[13px] leading-relaxed text-ink-500">
                 Taken from the recording at{" "}
                 {formatTimestampWithTenths(step.evidenceTimestampSeconds)}.
@@ -369,11 +376,18 @@ export function StepRow({
         <div className="flex flex-col items-start gap-2">
           <StepScreenshot
             screenshotUrl={step.screenshotUrl}
+            annotations={step.evidenceAnnotations}
             timestampSeconds={step.evidenceTimestampSeconds}
             stepNumber={stepNumber}
             onOpen={() => onOpenScreenshot(step)}
             onChangeFrame={() => onChangeEvidence(step)}
           />
+          {step.screenshotUrl ? (
+            <Button size="sm" variant="secondary" onClick={() => onAnnotateEvidence(step)}>
+              <PencilIcon className="size-3.5" />
+              {step.evidenceAnnotations.length > 0 ? "Edit highlights" : "Highlight evidence"}
+            </Button>
+          ) : null}
         </div>
       </td>
 
@@ -401,6 +415,12 @@ export function StepRow({
                 label: "Change evidence frame",
                 icon: <FrameIcon className="size-4" />,
                 onSelect: () => onChangeEvidence(step),
+              },
+              {
+                label: "Highlight evidence",
+                icon: <PencilIcon className="size-4" />,
+                isDisabled: !step.screenshotUrl,
+                onSelect: () => onAnnotateEvidence(step),
               },
               {
                 label: "Move up",

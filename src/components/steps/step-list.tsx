@@ -14,6 +14,7 @@ type StepListProps = {
   onMoveStepToPosition: (stepId: string, position: number) => Promise<void>;
   onInsertStep: (afterStepId: string) => Promise<void>;
   onChangeEvidence: (step: SerializedStep) => void;
+  onAnnotateEvidence: (step: SerializedStep) => void;
   onAddStep: () => Promise<void>;
   isAddingStep: boolean;
   onOpenScreenshot: (step: SerializedStep) => void;
@@ -27,6 +28,7 @@ export function StepList({
   onMoveStepToPosition,
   onInsertStep,
   onChangeEvidence,
+  onAnnotateEvidence,
   onAddStep,
   isAddingStep,
   onOpenScreenshot,
@@ -70,6 +72,7 @@ export function StepList({
         onMoveStepToPosition={onMoveStepToPosition}
         onInsertStep={onInsertStep}
         onChangeEvidence={onChangeEvidence}
+        onAnnotateEvidence={onAnnotateEvidence}
         onOpenScreenshot={onOpenScreenshot}
       />
 
