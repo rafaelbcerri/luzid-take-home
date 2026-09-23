@@ -4,6 +4,7 @@
  */
 import type { SerializedRecording, SerializedStep } from "@/lib/api/serialize-recording";
 import type { FramePreview } from "@/lib/types/frame-preview";
+import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
 import type { Recording, StepFieldUpdates } from "@/lib/types/process-step";
 
 export class ApiRequestError extends Error {
@@ -155,6 +156,21 @@ export function changeStepEvidenceRequest(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ timestampSeconds }),
+    },
+  );
+}
+
+export function saveEvidenceAnnotationsRequest(
+  stepId: string,
+  evidenceTimestampSeconds: number,
+  evidenceAnnotations: EvidenceAnnotation[],
+) {
+  return requestJson<{ step: SerializedStep }>(
+    `/api/steps/${stepId}/annotations`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ evidenceTimestampSeconds, annotations: evidenceAnnotations }),
     },
   );
 }

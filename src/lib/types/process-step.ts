@@ -1,4 +1,6 @@
 /** Processing lifecycle of an uploaded recording, in the order the stages happen. */
+import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
+
 export const RECORDING_STATUSES = [
   "uploading",
   "analyzing",
@@ -36,6 +38,7 @@ export type ProcessStep = {
   /** Where the stored screenshot was taken — a consultant may move this without moving the step. */
   evidenceTimestampSeconds: number;
   screenshotPath: string | null;
+  evidenceAnnotations: EvidenceAnnotation[];
 };
 
 /** The step fields a consultant can edit by hand, all optional in a PATCH. */

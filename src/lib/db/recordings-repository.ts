@@ -1,7 +1,8 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { processSteps, recordings } from "@/lib/db/schema";
+import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
 import type {
   ExtractedStep,
   ProcessStep,
@@ -41,6 +42,7 @@ function toProcessStep(row: ProcessStepRow): ProcessStep {
     timestampSeconds: row.timestampSeconds,
     evidenceTimestampSeconds: row.evidenceTimestampSeconds,
     screenshotPath: row.screenshotPath,
+    evidenceAnnotations: row.evidenceAnnotations,
   };
 }
 
@@ -160,8 +162,26 @@ export async function setStepEvidence(params: {
     .set({
       screenshotPath: params.screenshotPath,
       evidenceTimestampSeconds: params.evidenceTimestampSeconds,
+      evidenceAnnotations: [],
     })
     .where(eq(processSteps.id, params.stepId))
+    .returning();
+
+  return row ? toProcessStep(row) : null;
+}
+
+export async function setStepEvidenceAnnotations(params: {
+  stepId: string;
+  expectedEvidenceTimestampSeconds: number;
+  evidenceAnnotations: EvidenceAnnotation[];
+}): Promise<ProcessStep | null> {
+  const [row] = await db
+    .update(processSteps)
+    .set({ evidenceAnnotations: params.evidenceAnnotations })
+    .where(and(
+      eq(processSteps.id, params.stepId),
+      eq(processSteps.evidenceTimestampSeconds, params.expectedEvidenceTimestampSeconds),
+    ))
     .returning();
 
   return row ? toProcessStep(row) : null;

@@ -9,6 +9,7 @@ import { StepSkeletonList } from "@/components/processing/step-skeleton-list";
 import { RecordingErrorCard } from "@/components/recordings/recording-error-card";
 import { RecordingTitle } from "@/components/recordings/recording-title";
 import { FramePickerDialog } from "@/components/steps/frame-picker-dialog";
+import { EvidenceAnnotationEditor } from "@/components/steps/evidence-annotation-editor";
 import { ScreenshotLightbox } from "@/components/steps/screenshot-lightbox";
 import { StepList } from "@/components/steps/step-list";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ export function RecordingDetail({
     useState<SerializedStep | null>(null);
 
   const [stepChangingEvidence, setStepChangingEvidence] =
+    useState<SerializedStep | null>(null);
+  const [stepAnnotatingEvidence, setStepAnnotatingEvidence] =
     useState<SerializedStep | null>(null);
 
   const stepEditing = useStepEditing({
@@ -204,6 +207,7 @@ export function RecordingDetail({
           onMoveStepToPosition={stepEditing.moveStepToPosition}
           onInsertStep={stepEditing.insertStepBelow}
           onChangeEvidence={setStepChangingEvidence}
+          onAnnotateEvidence={setStepAnnotatingEvidence}
           onAddStep={stepEditing.appendEmptyStep}
           isAddingStep={stepEditing.isAddingStep}
           onOpenScreenshot={setScreenshotInFocus}
@@ -213,6 +217,7 @@ export function RecordingDetail({
       {screenshotInFocus?.screenshotUrl ? (
         <ScreenshotLightbox
           screenshotUrl={screenshotInFocus.screenshotUrl}
+          annotations={screenshotInFocus.evidenceAnnotations}
           caption={screenshotInFocus.action}
           timestampSeconds={screenshotInFocus.timestampSeconds}
           onClose={() => setScreenshotInFocus(null)}
@@ -233,6 +238,18 @@ export function RecordingDetail({
             showToast("success", "Evidence updated");
           }}
           onError={(message) => showToast("error", message)}
+        />
+      ) : null}
+
+      {stepAnnotatingEvidence?.screenshotUrl ? (
+        <EvidenceAnnotationEditor
+          step={stepAnnotatingEvidence}
+          stepNumber={recording.steps.findIndex((step) => step.id === stepAnnotatingEvidence.id) + 1}
+          onClose={() => setStepAnnotatingEvidence(null)}
+          onSaved={(savedStep) => {
+            stepEditing.applyChangedStep(savedStep);
+            showToast("success", "Evidence highlights saved");
+          }}
         />
       ) : null}
 

@@ -87,6 +87,11 @@ hand. Every change is optimistic and rolls back if the request fails.
 
 `Re-analyze` runs the pipeline again on the stored video — no re-upload needed.
 
+Use **Highlight evidence** on a step to draw rectangle or square outlines over
+its screenshot. Highlights can be moved, resized, or removed before saving and
+appear on both the step thumbnail and full-size view. Choosing another frame
+clears that step's highlights because they refer to the previous image.
+
 ## Scripts
 
 | Command | What it does |
