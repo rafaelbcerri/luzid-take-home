@@ -9,9 +9,14 @@ const environmentSchema = z.object({
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   SUPABASE_URL: z.string().url("SUPABASE_URL must be a valid URL"),
+  SUPABASE_PUBLISHABLE_KEY: z
+    .string()
+    .min(1, "SUPABASE_PUBLISHABLE_KEY is required"),
   SUPABASE_SERVICE_ROLE_KEY: z
     .string()
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  APP_ORIGIN: z.string().url("APP_ORIGIN must be a valid URL"),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
 function readEnvironment() {

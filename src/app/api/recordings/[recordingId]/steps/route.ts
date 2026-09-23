@@ -2,10 +2,12 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { serializeStep } from "@/lib/api/serialize-recording";
 import {
   appendStep,
   findRecording,
+  InvalidStepOrderError,
   insertStepAfter,
   reorderSteps,
 } from "@/lib/db/recordings-repository";
@@ -28,7 +30,9 @@ export async function POST(
   const { recordingId } = await context.params;
 
   try {
-    if (!(await findRecording(recordingId))) {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to edit this script.", 401);
+    if (!(await findRecording(recordingId, ownerUserId))) {
       return apiError("This recording does not exist.", 404);
     }
 
@@ -43,9 +47,12 @@ export async function POST(
     const step = parsed.data.afterStepId
       ? await insertStepAfter({
           recordingId,
+          ownerUserId,
           afterStepId: parsed.data.afterStepId,
         })
-      : await appendStep({ recordingId });
+      : await appendStep({ recordingId, ownerUserId });
+
+    if (!step) return apiError("This step does not belong to this script.", 404);
 
     return apiOk({ step: await serializeStep(step) }, 201);
   } catch (error) {
@@ -62,6 +69,8 @@ export async function PATCH(
   const { recordingId } = await context.params;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to edit this script.", 401);
     const parsed = reorderRequestSchema.safeParse(await request.json());
 
     if (!parsed.success) {
@@ -70,11 +79,15 @@ export async function PATCH(
 
     const steps = await reorderSteps({
       recordingId,
+      ownerUserId,
       orderedStepIds: parsed.data.orderedStepIds,
     });
 
+    if (!steps) return apiError("This recording does not exist.", 404);
+
     return apiOk({ steps: await Promise.all(steps.map(serializeStep)) });
   } catch (error) {
+    if (error instanceof InvalidStepOrderError) return apiError(error.message, 400);
     console.error(`[api] reordering steps of ${recordingId} failed`, error);
     return apiError("Could not save the new order.", 500);
   }

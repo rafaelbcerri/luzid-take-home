@@ -1,8 +1,10 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
-import { processSteps, recordings } from "@/lib/db/schema";
 import type { EvidenceAnnotation } from "@/lib/evidence/annotation-geometry";
+import { processSteps, recordingPublicShares, recordings } from "@/lib/db/schema";
 import type {
   ExtractedStep,
   ProcessStep,
@@ -18,6 +20,7 @@ type ProcessStepRow = typeof processSteps.$inferSelect;
 function toRecording(row: RecordingRow): Recording {
   return {
     id: row.id,
+    ownerUserId: row.ownerUserId,
     title: row.title,
     status: row.status,
     errorMessage: row.errorMessage,
@@ -36,15 +39,17 @@ function toProcessStep(row: ProcessStepRow): ProcessStep {
     action: row.action,
     system: row.system,
     description: row.description,
+    responsible: row.responsible,
     expectedResult: row.expectedResult,
     timestampSeconds: row.timestampSeconds,
     evidenceTimestampSeconds: row.evidenceTimestampSeconds,
     screenshotPath: row.screenshotPath,
-    evidenceAnnotations: row.evidenceAnnotations,
+    evidenceAnnotations: row.evidenceAnnotations ?? [],
   };
 }
 
 export async function createRecording(params: {
+  ownerUserId: string;
   title: string;
   originalFileName: string;
   videoPath: string;
@@ -75,10 +80,11 @@ export async function updateRecordingStatus(params: {
     .where(eq(recordings.id, params.recordingId));
 }
 
-export async function listRecordings(): Promise<Recording[]> {
+export async function listRecordings(ownerUserId: string): Promise<Recording[]> {
   const rows = await db
     .select()
     .from(recordings)
+    .where(eq(recordings.ownerUserId, ownerUserId))
     .orderBy(desc(recordings.createdAt));
 
   return rows.map(toRecording);
@@ -86,11 +92,12 @@ export async function listRecordings(): Promise<Recording[]> {
 
 export async function findRecording(
   recordingId: string,
+  ownerUserId: string,
 ): Promise<Recording | null> {
   const [row] = await db
     .select()
     .from(recordings)
-    .where(eq(recordings.id, recordingId))
+    .where(and(eq(recordings.id, recordingId), eq(recordings.ownerUserId, ownerUserId)))
     .limit(1);
 
   return row ? toRecording(row) : null;
@@ -98,8 +105,9 @@ export async function findRecording(
 
 export async function findRecordingWithSteps(
   recordingId: string,
+  ownerUserId: string,
 ): Promise<RecordingWithSteps | null> {
-  const recording = await findRecording(recordingId);
+  const recording = await findRecording(recordingId, ownerUserId);
   if (!recording) return null;
 
   return { ...recording, steps: await listStepsForRecording(recordingId) };
@@ -138,6 +146,7 @@ export async function replaceSteps(params: {
           action: step.action,
           system: step.system,
           description: step.description,
+          responsible: step.responsible ?? "",
           expectedResult: step.expectedResult,
           timestampSeconds: step.timestampSeconds,
         })),
@@ -158,7 +167,6 @@ export async function setStepEvidence(params: {
     .set({
       screenshotPath: params.screenshotPath,
       evidenceTimestampSeconds: params.evidenceTimestampSeconds,
-      evidenceAnnotations: [],
     })
     .where(eq(processSteps.id, params.stepId))
     .returning();
@@ -174,56 +182,94 @@ export async function setStepEvidenceAnnotations(params: {
   const [row] = await db
     .update(processSteps)
     .set({ evidenceAnnotations: params.evidenceAnnotations })
-    .where(and(
-      eq(processSteps.id, params.stepId),
-      eq(processSteps.evidenceTimestampSeconds, params.expectedEvidenceTimestampSeconds),
-    ))
+    .where(
+      and(
+        eq(processSteps.id, params.stepId),
+        eq(
+          processSteps.evidenceTimestampSeconds,
+          params.expectedEvidenceTimestampSeconds,
+        ),
+      ),
+    )
     .returning();
 
   return row ? toProcessStep(row) : null;
 }
 
 export async function updateStep(
-  params: { stepId: string } & StepFieldUpdates,
+  params: { stepId: string; ownerUserId: string } & StepFieldUpdates,
 ): Promise<ProcessStep | null> {
-  const { stepId, ...changes } = params;
+  const { stepId, ownerUserId, ...changes } = params;
 
   const [row] = await db
     .update(processSteps)
     .set(changes)
-    .where(eq(processSteps.id, stepId))
+    .where(and(eq(processSteps.id, stepId), ownedStepRecordingCondition(ownerUserId)))
     .returning();
 
   return row ? toProcessStep(row) : null;
 }
 
-export async function deleteStep(stepId: string): Promise<ProcessStep | null> {
+export async function deleteStep(stepId: string, ownerUserId: string): Promise<ProcessStep | null> {
   const [row] = await db
     .delete(processSteps)
-    .where(eq(processSteps.id, stepId))
+    .where(and(eq(processSteps.id, stepId), ownedStepRecordingCondition(ownerUserId)))
     .returning();
 
   return row ? toProcessStep(row) : null;
 }
 
-export async function deleteRecording(recordingId: string): Promise<void> {
-  await db.delete(recordings).where(eq(recordings.id, recordingId));
+export async function deleteRecording(recordingId: string, ownerUserId: string): Promise<void> {
+  await db.delete(recordings).where(
+    and(eq(recordings.id, recordingId), eq(recordings.ownerUserId, ownerUserId)),
+  );
+}
+
+function ownedStepRecordingCondition(ownerUserId: string) {
+  return inArray(
+    processSteps.recordingId,
+    db.select({ id: recordings.id })
+      .from(recordings)
+      .where(eq(recordings.ownerUserId, ownerUserId)),
+  );
+}
+
+export class InvalidStepOrderError extends Error {
+  constructor() {
+    super("The new step order does not match this script.");
+  }
 }
 
 /** Persists a new order by writing each step's index as its position. */
 export async function reorderSteps(params: {
   recordingId: string;
+  ownerUserId: string;
   orderedStepIds: string[];
-}): Promise<ProcessStep[]> {
+}): Promise<ProcessStep[] | null> {
+  if (!(await findRecording(params.recordingId, params.ownerUserId))) return null;
+
   await db.transaction(async (transaction) => {
-    await Promise.all(
-      params.orderedStepIds.map((stepId, index) =>
-        transaction
-          .update(processSteps)
-          .set({ position: index })
-          .where(eq(processSteps.id, stepId)),
-      ),
-    );
+    const existingSteps = await transaction
+      .select({ id: processSteps.id })
+      .from(processSteps)
+      .where(eq(processSteps.recordingId, params.recordingId));
+    const existingIds = new Set(existingSteps.map((step) => step.id));
+    const orderedIds = new Set(params.orderedStepIds);
+
+    if (
+      orderedIds.size !== existingIds.size ||
+      params.orderedStepIds.length !== existingIds.size ||
+      params.orderedStepIds.some((stepId) => !existingIds.has(stepId))
+    ) {
+      throw new InvalidStepOrderError();
+    }
+
+    for (const [position, stepId] of params.orderedStepIds.entries()) {
+      await transaction
+        .update(processSteps)
+        .set({ position })
+        .where(and(eq(processSteps.id, stepId), eq(processSteps.recordingId, params.recordingId)));
+    }
   });
 
   return listStepsForRecording(params.recordingId);
@@ -231,7 +277,9 @@ export async function reorderSteps(params: {
 
 export async function appendStep(params: {
   recordingId: string;
-}): Promise<ProcessStep> {
+  ownerUserId: string;
+}): Promise<ProcessStep | null> {
+  if (!(await findRecording(params.recordingId, params.ownerUserId))) return null;
   const existingSteps = await listStepsForRecording(params.recordingId);
   const nextPosition = existingSteps.length;
   const lastTimestamp = existingSteps.at(-1)?.timestampSeconds ?? 0;
@@ -244,6 +292,7 @@ export async function appendStep(params: {
       action: "New step",
       system: "",
       description: "",
+      responsible: "",
       expectedResult: "",
       timestampSeconds: lastTimestamp,
       evidenceTimestampSeconds: lastTimestamp,
@@ -256,12 +305,13 @@ export async function appendStep(params: {
 /** A step plus the recording it belongs to — what the frame picker needs in one read. */
 export async function findStepWithRecording(
   stepId: string,
+  ownerUserId: string,
 ): Promise<{ step: ProcessStep; recording: Recording } | null> {
   const [row] = await db
     .select()
     .from(processSteps)
     .innerJoin(recordings, eq(processSteps.recordingId, recordings.id))
-    .where(eq(processSteps.id, stepId))
+    .where(and(eq(processSteps.id, stepId), eq(recordings.ownerUserId, ownerUserId)))
     .limit(1);
 
   if (!row) return null;
@@ -274,12 +324,13 @@ export async function findStepWithRecording(
 
 export async function renameRecording(params: {
   recordingId: string;
+  ownerUserId: string;
   title: string;
 }): Promise<Recording | null> {
   const [row] = await db
     .update(recordings)
     .set({ title: params.title, updatedAt: new Date() })
-    .where(eq(recordings.id, params.recordingId))
+    .where(and(eq(recordings.id, params.recordingId), eq(recordings.ownerUserId, params.ownerUserId)))
     .returning();
 
   return row ? toRecording(row) : null;
@@ -291,8 +342,11 @@ export async function renameRecording(params: {
  */
 export async function insertStepAfter(params: {
   recordingId: string;
+  ownerUserId: string;
   afterStepId: string | null;
-}): Promise<ProcessStep> {
+}): Promise<ProcessStep | null> {
+  if (!(await findRecording(params.recordingId, params.ownerUserId))) return null;
+
   return db.transaction(async (transaction) => {
     const existingSteps = await transaction
       .select()
@@ -303,6 +357,7 @@ export async function insertStepAfter(params: {
     const afterIndex = params.afterStepId
       ? existingSteps.findIndex((step) => step.id === params.afterStepId)
       : -1;
+    if (params.afterStepId && afterIndex === -1) return null;
     const insertAt = afterIndex + 1;
     const timestampSeconds =
       existingSteps[afterIndex]?.timestampSeconds ??
@@ -326,6 +381,7 @@ export async function insertStepAfter(params: {
         action: "New step",
         system: "",
         description: "",
+        responsible: "",
         expectedResult: "",
         timestampSeconds,
         evidenceTimestampSeconds: timestampSeconds,
@@ -334,4 +390,71 @@ export async function insertStepAfter(params: {
 
     return toProcessStep(row);
   });
+}
+
+export type RecordingShare = { token: string; createdAt: string };
+
+export async function findShareForOwner(
+  recordingId: string,
+  ownerUserId: string,
+): Promise<RecordingShare | null> {
+  const [row] = await db
+    .select({ token: recordingPublicShares.token, createdAt: recordingPublicShares.createdAt })
+    .from(recordingPublicShares)
+    .innerJoin(recordings, eq(recordingPublicShares.recordingId, recordings.id))
+    .where(and(eq(recordings.id, recordingId), eq(recordings.ownerUserId, ownerUserId)))
+    .limit(1);
+  return row ? { token: row.token, createdAt: row.createdAt.toISOString() } : null;
+}
+
+export async function createShareForOwner(
+  recordingId: string,
+  ownerUserId: string,
+): Promise<RecordingShare | null> {
+  if (!(await findRecording(recordingId, ownerUserId))) return null;
+  const [created] = await db
+    .insert(recordingPublicShares)
+    .values({ recordingId, token: randomBytes(32).toString("base64url") })
+    .onConflictDoNothing()
+    .returning();
+  if (created) return { token: created.token, createdAt: created.createdAt.toISOString() };
+  return findShareForOwner(recordingId, ownerUserId);
+}
+
+export async function revokeShareForOwner(
+  recordingId: string,
+  ownerUserId: string,
+): Promise<boolean> {
+  if (!(await findRecording(recordingId, ownerUserId))) return false;
+  await db.delete(recordingPublicShares).where(eq(recordingPublicShares.recordingId, recordingId));
+  return true;
+}
+
+export async function findPublicRecordingByToken(
+  token: string,
+): Promise<RecordingWithSteps | null> {
+  const [row] = await db
+    .select({ recording: recordings })
+    .from(recordingPublicShares)
+    .innerJoin(recordings, eq(recordingPublicShares.recordingId, recordings.id))
+    .where(eq(recordingPublicShares.token, token))
+    .limit(1);
+  if (!row) return null;
+  return {
+    ...toRecording(row.recording),
+    steps: await listStepsForRecording(row.recording.id),
+  };
+}
+
+export async function findPublicScreenshotByToken(
+  token: string,
+  stepId: string,
+): Promise<{ screenshotPath: string | null } | null> {
+  const [row] = await db
+    .select({ screenshotPath: processSteps.screenshotPath })
+    .from(recordingPublicShares)
+    .innerJoin(processSteps, eq(recordingPublicShares.recordingId, processSteps.recordingId))
+    .where(and(eq(recordingPublicShares.token, token), eq(processSteps.id, stepId)))
+    .limit(1);
+  return row ?? null;
 }

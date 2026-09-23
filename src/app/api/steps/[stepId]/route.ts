@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { serializeStep } from "@/lib/api/serialize-recording";
 import { deleteStep, updateStep } from "@/lib/db/recordings-repository";
 
@@ -50,6 +51,8 @@ export async function PATCH(
   const { stepId } = await context.params;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to edit this step.", 401);
     const parsed = updateStepRequestSchema.safeParse(await request.json());
 
     if (!parsed.success) {
@@ -59,7 +62,7 @@ export async function PATCH(
       );
     }
 
-    const step = await updateStep({ stepId, ...parsed.data });
+    const step = await updateStep({ stepId, ownerUserId, ...parsed.data });
 
     if (!step) {
       return apiError("This step does not exist.", 404);
@@ -79,7 +82,9 @@ export async function DELETE(
   const { stepId } = await context.params;
 
   try {
-    const step = await deleteStep(stepId);
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to delete this step.", 401);
+    const step = await deleteStep(stepId, ownerUserId);
 
     if (!step) {
       return apiError("This step does not exist.", 404);

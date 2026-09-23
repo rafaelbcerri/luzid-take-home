@@ -10,7 +10,7 @@ const globalForGemini = globalThis as unknown as {
 export const gemini =
   globalForGemini.geminiClient ?? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   globalForGemini.geminiClient = gemini;
 }
 

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { serializeStep } from "@/lib/api/serialize-recording";
 import { STORAGE_BUCKETS } from "@/lib/config/env";
 import {
@@ -33,13 +34,15 @@ export async function PUT(
   const { stepId } = await context.params;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to change this screenshot.", 401);
     const parsed = changeEvidenceRequestSchema.safeParse(await request.json());
 
     if (!parsed.success) {
       return apiError("That position in the recording is not valid.", 400);
     }
 
-    const found = await findStepWithRecording(stepId);
+    const found = await findStepWithRecording(stepId, ownerUserId);
 
     if (!found) {
       return apiError("This step does not exist.", 404);

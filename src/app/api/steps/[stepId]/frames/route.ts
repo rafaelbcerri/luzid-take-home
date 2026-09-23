@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { findStepWithRecording } from "@/lib/db/recordings-repository";
 import { capturePreviewFrames } from "@/lib/video/frame-preview";
 import { buildFrameWindow } from "@/lib/video/frame-window";
@@ -20,7 +21,9 @@ export async function GET(
   const { stepId } = await context.params;
 
   try {
-    const found = await findStepWithRecording(stepId);
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to view these frames.", 401);
+    const found = await findStepWithRecording(stepId, ownerUserId);
 
     if (!found) {
       return apiError("This step does not exist.", 404);

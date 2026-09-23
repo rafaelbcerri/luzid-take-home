@@ -8,6 +8,7 @@ import { ProcessingTimeline } from "@/components/processing/processing-timeline"
 import { StepSkeletonList } from "@/components/processing/step-skeleton-list";
 import { RecordingErrorCard } from "@/components/recordings/recording-error-card";
 import { RecordingTitle } from "@/components/recordings/recording-title";
+import { ShareControls } from "@/components/sharing/share-controls";
 import { FramePickerDialog } from "@/components/steps/frame-picker-dialog";
 import { EvidenceAnnotationEditor } from "@/components/steps/evidence-annotation-editor";
 import { ScreenshotLightbox } from "@/components/steps/screenshot-lightbox";
@@ -35,8 +36,12 @@ import { useToast } from "@/hooks/use-toast";
  */
 export function RecordingDetail({
   initialRecording,
+  initialShareUrl,
+  shareOrigin,
 }: {
   initialRecording: SerializedRecording;
+  initialShareUrl: string | null;
+  shareOrigin: string;
 }) {
   const router = useRouter();
   const { toast, showToast, dismissToast } = useToast();
@@ -171,6 +176,8 @@ export function RecordingDetail({
           </Button>
         </div>
       </header>
+
+      <ShareControls recordingId={recording.id} initialShareUrl={initialShareUrl} shareOrigin={shareOrigin} />
 
       {pollError ? (
         <p

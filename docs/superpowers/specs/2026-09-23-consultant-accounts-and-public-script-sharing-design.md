@@ -6,7 +6,7 @@ Give each consultant a private workspace for recordings and editable test script
 
 ## Decisions
 
-- Use Supabase Auth with email and password for signup, login, email verification, password reset, and logout. Do not add social login, magic-link login, or company SSO.
+- Use Supabase Auth with email and password for signup, login, password reset, and logout. Signup email verification is disabled. Do not add social login, magic-link login, or company SSO.
 - Keep all recording and step data access in the existing Next.js server and Drizzle repository. Do not use Row Level Security.
 - A recording belongs to exactly one Supabase Auth user. It is private unless its owner creates a public link.
 - A public link shows the generated test script and screenshots only. It never exposes the original video, editing controls, or private workspace.
@@ -17,7 +17,7 @@ Give each consultant a private workspace for recordings and editable test script
 
 ### Accounts
 
-Signed-out visitors reaching the workspace go to a focused login screen. Signup asks for email and password. Supabase email verification is enabled, and the post-signup screen tells the consultant to check their inbox. Login gives a clear path to password reset. Account actions show progress and actionable errors; successful login returns the consultant to the workspace or the private page they originally requested. Signed-in consultants can log out from the header.
+Signed-out visitors reaching the workspace go to a focused login screen. Signup asks for email and password, creates a session immediately, and opens the workspace without email verification. Login gives a clear path to password reset. Account actions show progress and actionable errors; successful login returns the consultant to the workspace or the private page they originally requested. Signed-in consultants can log out from the header.
 
 ### Workspace
 
@@ -66,7 +66,7 @@ Before making ownership required, remove the existing test recording rows and th
 
 ## Verification and acceptance
 
-1. Signup, verification, login, logout, and password reset work through Supabase Auth.
+1. Signup signs the consultant in immediately; login, logout, and password reset work through Supabase Auth.
 2. Two consultants can upload and edit their own scripts. Neither can list, open, alter, retry, delete, reorder, or obtain screenshot access to the other's private scripts or steps.
 3. A valid public link opens without login and shows only the script and screenshots. It cannot edit or access the source video. Revocation blocks the page and new screenshot requests; replacement produces a different link.
 4. Upload progress survives page reload, step editing works, and an invalid video produces an actionable message.

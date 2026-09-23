@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/recordings-repository";
 import { evidenceAnnotationsSchema } from "@/lib/evidence/annotation-schema";
 import { z } from "zod";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 
 const saveAnnotationsSchema = z.object({
   evidenceTimestampSeconds: z.number().finite().min(0),
@@ -21,12 +22,14 @@ export async function PUT(
   const { stepId } = await context.params;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to edit this evidence.", 401);
     const parsed = saveAnnotationsSchema.safeParse(await request.json());
     if (!parsed.success) {
       return apiError("The highlights are not valid. Adjust them and try again.", 400);
     }
 
-    const found = await findStepWithRecording(stepId);
+    const found = await findStepWithRecording(stepId, ownerUserId);
     if (!found) return apiError("This step does not exist.", 404);
     if (!found.step.screenshotPath) {
       return apiError("Choose an evidence frame before adding highlights.", 400);

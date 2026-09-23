@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { apiError, apiOk } from "@/lib/api/responses";
+import { getAuthenticatedUserId } from "@/lib/auth/session";
 import { serializeRecording } from "@/lib/api/serialize-recording";
 import { STORAGE_BUCKETS } from "@/lib/config/env";
 import {
@@ -23,7 +24,9 @@ export async function GET(
   const { recordingId } = await context.params;
 
   try {
-    const recording = await findRecordingWithSteps(recordingId);
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to view this recording.", 401);
+    const recording = await findRecordingWithSteps(recordingId, ownerUserId);
 
     if (!recording) {
       return apiError("This recording does not exist.", 404);
@@ -44,7 +47,9 @@ export async function DELETE(
   const { recordingId } = await context.params;
 
   try {
-    const recording = await findRecording(recordingId);
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to delete this recording.", 401);
+    const recording = await findRecording(recordingId, ownerUserId);
 
     if (!recording) {
       return apiError("This recording does not exist.", 404);
@@ -65,7 +70,7 @@ export async function DELETE(
       }),
     ]);
 
-    await deleteRecording(recordingId);
+    await deleteRecording(recordingId, ownerUserId);
 
     return apiOk({ deleted: true });
   } catch (error) {
@@ -84,6 +89,8 @@ export async function PATCH(
   const { recordingId } = await context.params;
 
   try {
+    const ownerUserId = await getAuthenticatedUserId();
+    if (!ownerUserId) return apiError("Sign in to rename this recording.", 401);
     const parsed = renameRequestSchema.safeParse(await request.json());
 
     if (!parsed.success) {
@@ -95,6 +102,7 @@ export async function PATCH(
 
     const recording = await renameRecording({
       recordingId,
+      ownerUserId,
       title: parsed.data.title,
     });
 

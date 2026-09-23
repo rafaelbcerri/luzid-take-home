@@ -2,6 +2,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { RecordingList } from "@/components/recordings/recording-list";
 import { Hero } from "@/components/upload/hero";
 import { UploadPanel } from "@/components/upload/upload-panel";
+import { requirePageUserId } from "@/lib/auth/session";
 import { listRecordings } from "@/lib/db/recordings-repository";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,8 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const recordings = await listRecordings();
+  const ownerUserId = await requirePageUserId("/");
+  const recordings = await listRecordings(ownerUserId);
 
   return (
     <PageShell>
