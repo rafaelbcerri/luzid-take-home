@@ -21,6 +21,11 @@ import {
 
 const FRAME_NUDGE_SECONDS = 0.2;
 
+/** Timestamps are compared by tenth: 3.2 + 0.2 is 3.4000000000000004 in floats. */
+function toTenths(seconds: number): number {
+  return Math.round(seconds * 10);
+}
+
 type FramePickerDialogProps = {
   step: SerializedStep;
   stepNumber: number;
@@ -54,8 +59,22 @@ export function FramePickerDialog({
   }, [onClose]);
 
   const selectedFrame = picker.frames.find(
-    (frame) => frame.timestampSeconds === picker.selectedSeconds,
+    (frame) => toTenths(frame.timestampSeconds) === toTenths(picker.selectedSeconds),
   );
+
+  // While a new strip loads, the chosen timestamp has no frame yet. Keep the
+  // nearest frame we already have on screen (blurred) rather than flashing an
+  // error for something that is simply in flight.
+  const placeholderFrame = picker.frames.reduce<
+    (typeof picker.frames)[number] | undefined
+  >((nearest, frame) => {
+    if (frame.dataUrl === null) return nearest;
+    if (!nearest) return frame;
+    return Math.abs(frame.timestampSeconds - picker.selectedSeconds) <
+      Math.abs(nearest.timestampSeconds - picker.selectedSeconds)
+      ? frame
+      : nearest;
+  }, undefined);
 
   async function handleUseFrame() {
     const didSave = await picker.saveFrame();
@@ -67,8 +86,9 @@ export function FramePickerDialog({
       Math.max(0, seconds),
       picker.durationSeconds ?? seconds,
     );
-    picker.setSelectedSeconds(clamped);
-    void picker.loadFramesAround(clamped);
+    const rounded = toTenths(clamped) / 10;
+    picker.setSelectedSeconds(rounded);
+    void picker.loadFramesAround(rounded);
   }
 
   return (
@@ -104,9 +124,7 @@ export function FramePickerDialog({
 
         <div className="flex flex-col gap-4 overflow-y-auto p-6">
           <div className="relative grid h-[420px] w-full place-items-center overflow-hidden rounded-[var(--radius-control)] border border-ink-300 bg-ink-50">
-            {picker.isLoadingFrames && picker.frames.length === 0 ? (
-              <Spinner />
-            ) : picker.loadError ? (
+            {picker.loadError && !picker.isLoadingFrames ? (
               <div className="flex flex-col items-center gap-3 px-6 text-center">
                 <p role="alert" className="text-sm text-danger-600">
                   {picker.loadError}
@@ -120,6 +138,34 @@ export function FramePickerDialog({
                   Try again
                 </Button>
               </div>
+            ) : picker.isLoadingFrames ? (
+              <>
+                {placeholderFrame?.dataUrl ? (
+                  <Image
+                    src={placeholderFrame.dataUrl}
+                    alt=""
+                    fill
+                    unoptimized
+                    sizes="1032px"
+                    className="scale-105 object-contain opacity-60 blur-md"
+                  />
+                ) : (
+                  <div className="skeleton absolute inset-0" />
+                )}
+                <div
+                  role="status"
+                  className="relative flex items-center gap-3 rounded-full border border-ink-200 bg-white/95 py-2.5 pr-5 pl-3.5 shadow-lg"
+                >
+                  <Spinner />
+                  <span className="text-sm font-medium text-ink-900">
+                    Reading the frame at{" "}
+                    <span className="font-mono">
+                      {formatTimestampWithTenths(picker.selectedSeconds)}
+                    </span>
+                    …
+                  </span>
+                </div>
+              </>
             ) : selectedFrame?.dataUrl ? (
               <Image
                 src={selectedFrame.dataUrl}
@@ -127,7 +173,7 @@ export function FramePickerDialog({
                 fill
                 unoptimized
                 sizes="1032px"
-                className="object-contain"
+                className="animate-[frame-in_180ms_ease-out] object-contain"
               />
             ) : (
               <span className="text-[13px] text-ink-500">
@@ -191,9 +237,18 @@ export function FramePickerDialog({
               Nearby frames
             </span>
             <div className="flex gap-2.5 overflow-x-auto pb-1">
-              {picker.frames.map((frame) => {
+              {picker.isLoadingFrames
+                ? Array.from({ length: 6 }, (_unused, index) => (
+                    <div
+                      key={index}
+                      aria-hidden
+                      className="skeleton h-24 w-[158px] shrink-0 rounded-[var(--radius-control)] border border-ink-200"
+                    />
+                  ))
+                : picker.frames.map((frame) => {
                 const isSelected =
-                  frame.timestampSeconds === picker.selectedSeconds;
+                  toTenths(frame.timestampSeconds) ===
+                  toTenths(picker.selectedSeconds);
 
                 return (
                   <button

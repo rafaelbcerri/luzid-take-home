@@ -94,3 +94,9 @@
     transform: translateX(-100%);
   }
 }
+
+@keyframes frame-in {
+  from {
+    opacity: 0;
+  }
+}
